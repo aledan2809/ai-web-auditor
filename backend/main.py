@@ -70,10 +70,11 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:3001",
-        "https://*.vercel.app"
+        "https://frontend-eosin-seven-27.vercel.app",
+        "https://frontend-mbhvxomt4-alex-danciulescus-projects.vercel.app",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
 )
 
