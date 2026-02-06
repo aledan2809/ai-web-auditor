@@ -1,0 +1,58 @@
+# FastAPI & Server
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.25
+aiosqlite==0.19.0
+asyncpg==0.29.0
+alembic==1.13.1
+
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Payments
+stripe==7.0.0
+
+# HTTP & Scraping
+httpx==0.26.0
+beautifulsoup4==4.12.3
+lxml==5.1.0
+playwright==1.41.0
+
+# AI
+anthropic==0.18.0
+
+# PDF Generation
+reportlab==4.0.9
+weasyprint==60.2
+
+# Validation & Utils
+pydantic==2.5.3
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
+
+# Performance Testing
+lighthouse==1.0.0
+
+# Security Scanning
+requests==2.31.0
+urllib3==2.1.0
+
+# SEO Analysis
+meta-tags-parser==1.2.0
+
+# Accessibility
+axe-playwright==0.1.4
+
+# Image Processing (screenshots)
+pillow==10.2.0
+
+# Async
+asyncio==3.4.3
+aiofiles==23.2.1
+
+# Date/Time
+python-dateutil==2.8.2
