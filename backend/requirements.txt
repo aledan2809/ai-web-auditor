@@ -30,9 +30,10 @@ reportlab==4.0.9
 weasyprint==60.2
 
 # Validation & Utils
-pydantic==2.5.3
+pydantic[email]==2.5.3
 pydantic-settings==2.1.0
 python-dotenv==1.0.0
+email-validator==2.1.0
 
 # Security Scanning
 requests==2.31.0
