@@ -3,7 +3,7 @@ Authentication API routes
 """
 
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -205,23 +205,20 @@ async def logout(response: Response):
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(
-    request_obj: any,
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db)
 ):
     """Refresh access token using refresh token"""
-    from fastapi import Request
-    request: Request = request_obj
-
-    refresh_token = request.cookies.get("refresh_token")
-    if not refresh_token:
+    refresh_token_cookie = request.cookies.get("refresh_token")
+    if not refresh_token_cookie:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token de refresh lipseste"
         )
 
     # Decode refresh token
-    payload = decode_token(refresh_token)
+    payload = decode_token(refresh_token_cookie)
     if not payload or payload.get("type") != "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
