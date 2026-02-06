@@ -40,8 +40,8 @@ COPY backend/ .
 # Create data directory
 RUN mkdir -p data
 
-# Expose port
+# Expose port (Railway will override with $PORT)
 EXPOSE 8001
 
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
+# Run the application - use PORT env var from Railway
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8001}
