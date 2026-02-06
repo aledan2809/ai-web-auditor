@@ -34,24 +34,14 @@ pydantic==2.5.3
 pydantic-settings==2.1.0
 python-dotenv==1.0.0
 
-# Performance Testing
-lighthouse==1.0.0
-
 # Security Scanning
 requests==2.31.0
 urllib3==2.1.0
-
-# SEO Analysis
-meta-tags-parser==1.2.0
-
-# Accessibility
-axe-playwright==0.1.4
 
 # Image Processing (screenshots)
 pillow==10.2.0
 
 # Async
-asyncio==3.4.3
 aiofiles==23.2.1
 
 # Date/Time
