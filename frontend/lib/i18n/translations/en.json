@@ -1,0 +1,118 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "continue": "Continue",
+    "back": "Back",
+    "submit": "Submit",
+    "close": "Close"
+  },
+  "landing": {
+    "title": "Free Website Audit",
+    "subtitle": "Get instant scores for Performance, SEO, Security, GDPR & Accessibility",
+    "urlLabel": "Website URL",
+    "urlPlaceholder": "example.com or https://example.com",
+    "startButton": "Start Free Audit",
+    "noCardRequired": "No credit card required. Get your scores in 30 seconds.",
+    "features": {
+      "instantScores": {
+        "title": "Instant Scores",
+        "description": "Get your overall score and category breakdown immediately"
+      },
+      "aiPowered": {
+        "title": "AI-Powered Analysis",
+        "description": "Advanced algorithms detect issues human eyes miss"
+      },
+      "actionable": {
+        "title": "Actionable Report",
+        "description": "Clear recommendations to improve your website"
+      }
+    }
+  },
+  "teaser": {
+    "auditComplete": "Audit Complete!",
+    "resultsFor": "Results for",
+    "overallScore": "Overall Score",
+    "categoryScores": "Category Scores",
+    "issuesFound": "Issues Found",
+    "preview": "Preview",
+    "unlockFull": "Unlock full report to see all issues",
+    "getFullReport": "Get Your Full Audit Report",
+    "unlockDetailed": "Unlock detailed issues, recommendations, and AI-powered insights",
+    "choosePackage": "Choose Your Package",
+    "scoreLabels": {
+      "excellent": "Excellent!",
+      "good": "Good, but room for improvement",
+      "needsAttention": "Needs attention",
+      "critical": "Critical issues found"
+    }
+  },
+  "packages": {
+    "title": "Choose Your Report Package",
+    "subtitle": "Select the level of detail you need",
+    "starter": {
+      "name": "Starter",
+      "price": "FREE",
+      "requiresShare": "Requires sharing on social media"
+    },
+    "pro": {
+      "name": "Pro",
+      "popular": "POPULAR"
+    },
+    "full": {
+      "name": "Full"
+    },
+    "continueButton": "Continue to Registration",
+    "selectAudits": "Select your audit types",
+    "viewSample": {
+      "seo": "View sample SEO report",
+      "security": "View sample Security report"
+    }
+  },
+  "enrollment": {
+    "title": "Complete Your Registration",
+    "subtitle": "We need a few details to send your report",
+    "email": "Email Address",
+    "emailPlaceholder": "your@email.com",
+    "name": "Full Name",
+    "namePlaceholder": "John Doe",
+    "language": "Preferred Language",
+    "termsAgree": "I agree to the",
+    "termsLink": "Terms and Conditions",
+    "privacyAgree": "I agree to the",
+    "privacyLink": "Privacy Policy",
+    "newsletterConsent": "Send me tips and updates about website optimization",
+    "signature": "Your Signature",
+    "signatureHint": "Please sign above",
+    "signatureClear": "Clear",
+    "completeButton": "Complete Registration"
+  },
+  "payment": {
+    "title": "Complete Payment",
+    "selectedPackage": "You selected the {package} package",
+    "processing": "Processing payment..."
+  },
+  "complete": {
+    "title": "You're All Set!",
+    "message": "Your full audit report is ready. We've also sent a copy to your email.",
+    "viewReport": "View Full Report"
+  },
+  "auditTypes": {
+    "performance": "Performance",
+    "seo": "SEO",
+    "security": "Security",
+    "gdpr": "GDPR",
+    "accessibility": "Accessibility",
+    "technical": "Technical"
+  },
+  "severity": {
+    "critical": "Critical",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "info": "Info"
+  }
+}

@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import {
   Loader2, CheckCircle, XCircle, AlertTriangle,
-  Download, DollarSign, RefreshCw, ExternalLink
+  Download, DollarSign, RefreshCw, ExternalLink, Wrench
 } from 'lucide-react'
-import { auditApi, estimateApi, AuditResult, PriceEstimate } from '@/lib/api'
+import { auditApi, estimateApi, websiteGuruApi, AuditResult, PriceEstimate } from '@/lib/api'
 
 const severityColors = {
   critical: 'bg-red-100 text-red-800 border-red-200',
@@ -50,6 +50,7 @@ export default function AuditPage() {
   const [estimate, setEstimate] = useState<PriceEstimate | null>(null)
   const [loading, setLoading] = useState(true)
   const [estimateLoading, setEstimateLoading] = useState(false)
+  const [guruLoading, setGuruLoading] = useState(false)
   const [error, setError] = useState('')
 
   // Poll for audit status
@@ -104,6 +105,27 @@ export default function AuditPage() {
       window.URL.revokeObjectURL(url)
     } catch (err) {
       console.error('Download error:', err)
+    }
+  }
+
+  const handleSendToWebsiteGuru = async () => {
+    if (!audit) return
+    setGuruLoading(true)
+    try {
+      const result = await websiteGuruApi.sendAudit(audit)
+      if (result.success && result.redirect_url) {
+        // Open Website Guru in new tab
+        const guruUrl = process.env.NEXT_PUBLIC_WEBSITE_GURU_URL || 'http://localhost:3000'
+        window.open(`${guruUrl}${result.redirect_url}`, '_blank')
+      } else {
+        console.error('Website Guru error:', result.error)
+        alert('Eroare la trimiterea catre Website Guru')
+      }
+    } catch (err) {
+      console.error('Website Guru error:', err)
+      alert('Eroare la conectarea cu Website Guru')
+    } finally {
+      setGuruLoading(false)
     }
   }
 
@@ -180,13 +202,13 @@ export default function AuditPage() {
 
       {/* Actions */}
       {audit.status === 'completed' && (
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-wrap">
           <button
             onClick={handleDownloadPdf}
             className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
           >
             <Download className="w-5 h-5" />
-            Descarcă PDF
+            Descarca PDF
           </button>
           <button
             onClick={handleGetEstimate}
@@ -198,7 +220,19 @@ export default function AuditPage() {
             ) : (
               <DollarSign className="w-5 h-5" />
             )}
-            Calculează Preț
+            Calculeaza Pret
+          </button>
+          <button
+            onClick={handleSendToWebsiteGuru}
+            disabled={guruLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+          >
+            {guruLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Wrench className="w-5 h-5" />
+            )}
+            Repara cu Website Guru
           </button>
         </div>
       )}

@@ -1,0 +1,118 @@
+{
+  "common": {
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "success": "نجاح",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "continue": "متابعة",
+    "back": "رجوع",
+    "submit": "إرسال",
+    "close": "إغلاق"
+  },
+  "landing": {
+    "title": "فحص مجاني للموقع",
+    "subtitle": "احصل على نتائج فورية للأداء، تحسين محركات البحث، الأمان، اللائحة العامة لحماية البيانات وإمكانية الوصول",
+    "urlLabel": "رابط الموقع",
+    "urlPlaceholder": "example.com أو https://example.com",
+    "startButton": "ابدأ الفحص المجاني",
+    "noCardRequired": "لا حاجة لبطاقة ائتمان. احصل على نتائجك في 30 ثانية.",
+    "features": {
+      "instantScores": {
+        "title": "نتائج فورية",
+        "description": "احصل على النتيجة الإجمالية والتفاصيل حسب الفئة فوراً"
+      },
+      "aiPowered": {
+        "title": "تحليل بالذكاء الاصطناعي",
+        "description": "خوارزميات متقدمة تكتشف المشاكل التي لا تراها العين البشرية"
+      },
+      "actionable": {
+        "title": "تقرير قابل للتنفيذ",
+        "description": "توصيات واضحة لتحسين موقعك"
+      }
+    }
+  },
+  "teaser": {
+    "auditComplete": "اكتمل الفحص!",
+    "resultsFor": "نتائج",
+    "overallScore": "النتيجة الإجمالية",
+    "categoryScores": "نتائج الفئات",
+    "issuesFound": "المشاكل المكتشفة",
+    "preview": "معاينة",
+    "unlockFull": "افتح التقرير الكامل لرؤية جميع المشاكل",
+    "getFullReport": "احصل على تقريرك الكامل",
+    "unlockDetailed": "افتح المشاكل التفصيلية والتوصيات والتحليلات بالذكاء الاصطناعي",
+    "choosePackage": "اختر باقتك",
+    "scoreLabels": {
+      "excellent": "ممتاز!",
+      "good": "جيد، ولكن هناك مجال للتحسين",
+      "needsAttention": "يحتاج اهتماماً",
+      "critical": "تم اكتشاف مشاكل حرجة"
+    }
+  },
+  "packages": {
+    "title": "اختر باقة التقرير",
+    "subtitle": "حدد مستوى التفاصيل الذي تحتاجه",
+    "starter": {
+      "name": "المبتدئ",
+      "price": "مجاني",
+      "requiresShare": "يتطلب المشاركة على وسائل التواصل"
+    },
+    "pro": {
+      "name": "احترافي",
+      "popular": "الأكثر شعبية"
+    },
+    "full": {
+      "name": "كامل"
+    },
+    "continueButton": "متابعة إلى التسجيل",
+    "selectAudits": "اختر أنواع الفحص",
+    "viewSample": {
+      "seo": "عرض نموذج تقرير SEO",
+      "security": "عرض نموذج تقرير الأمان"
+    }
+  },
+  "enrollment": {
+    "title": "أكمل التسجيل",
+    "subtitle": "نحتاج بعض التفاصيل لإرسال تقريرك",
+    "email": "البريد الإلكتروني",
+    "emailPlaceholder": "email@example.com",
+    "name": "الاسم الكامل",
+    "namePlaceholder": "محمد أحمد",
+    "language": "اللغة المفضلة",
+    "termsAgree": "أوافق على",
+    "termsLink": "الشروط والأحكام",
+    "privacyAgree": "أوافق على",
+    "privacyLink": "سياسة الخصوصية",
+    "newsletterConsent": "أرسل لي نصائح وتحديثات حول تحسين الموقع",
+    "signature": "توقيعك",
+    "signatureHint": "يرجى التوقيع أعلاه",
+    "signatureClear": "مسح",
+    "completeButton": "إكمال التسجيل"
+  },
+  "payment": {
+    "title": "إتمام الدفع",
+    "selectedPackage": "اخترت باقة {package}",
+    "processing": "جاري معالجة الدفع..."
+  },
+  "complete": {
+    "title": "أنت جاهز!",
+    "message": "تقريرك الكامل جاهز. أرسلنا أيضاً نسخة إلى بريدك الإلكتروني.",
+    "viewReport": "عرض التقرير الكامل"
+  },
+  "auditTypes": {
+    "performance": "الأداء",
+    "seo": "تحسين محركات البحث",
+    "security": "الأمان",
+    "gdpr": "اللائحة العامة لحماية البيانات",
+    "accessibility": "إمكانية الوصول",
+    "technical": "تقني"
+  },
+  "severity": {
+    "critical": "حرج",
+    "high": "مرتفع",
+    "medium": "متوسط",
+    "low": "منخفض",
+    "info": "معلومات"
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "common": {
+    "loading": "Se incarca...",
+    "error": "Eroare",
+    "success": "Succes",
+    "cancel": "Anuleaza",
+    "save": "Salveaza",
+    "continue": "Continua",
+    "back": "Inapoi",
+    "submit": "Trimite",
+    "close": "Inchide"
+  },
+  "landing": {
+    "title": "Audit Gratuit pentru Website",
+    "subtitle": "Obtine scoruri instantanee pentru Performanta, SEO, Securitate, GDPR si Accesibilitate",
+    "urlLabel": "URL Website",
+    "urlPlaceholder": "exemplu.ro sau https://exemplu.ro",
+    "startButton": "Incepe Auditul Gratuit",
+    "noCardRequired": "Nu este necesar card. Primesti scorurile in 30 de secunde.",
+    "features": {
+      "instantScores": {
+        "title": "Scoruri Instantanee",
+        "description": "Primesti scorul general si detaliile pe categorii imediat"
+      },
+      "aiPowered": {
+        "title": "Analiza AI",
+        "description": "Algoritmi avansati detecteaza probleme invizibile ochiului uman"
+      },
+      "actionable": {
+        "title": "Raport Actionabil",
+        "description": "Recomandari clare pentru imbunatatirea website-ului"
+      }
+    }
+  },
+  "teaser": {
+    "auditComplete": "Audit Finalizat!",
+    "resultsFor": "Rezultate pentru",
+    "overallScore": "Scor General",
+    "categoryScores": "Scoruri pe Categorii",
+    "issuesFound": "Probleme Gasite",
+    "preview": "Previzualizare",
+    "unlockFull": "Deblocheaza raportul complet pentru a vedea toate problemele",
+    "getFullReport": "Obtine Raportul Complet",
+    "unlockDetailed": "Deblocheaza problemele detaliate, recomandarile si analizele AI",
+    "choosePackage": "Alege Pachetul Tau",
+    "scoreLabels": {
+      "excellent": "Excelent!",
+      "good": "Bine, dar exista loc de imbunatatiri",
+      "needsAttention": "Necesita atentie",
+      "critical": "Probleme critice gasite"
+    }
+  },
+  "packages": {
+    "title": "Alege Pachetul de Raport",
+    "subtitle": "Selecteaza nivelul de detaliu de care ai nevoie",
+    "starter": {
+      "name": "Starter",
+      "price": "GRATUIT",
+      "requiresShare": "Necesita distribuire pe social media"
+    },
+    "pro": {
+      "name": "Pro",
+      "popular": "POPULAR"
+    },
+    "full": {
+      "name": "Complet"
+    },
+    "continueButton": "Continua la Inregistrare",
+    "selectAudits": "Selecteaza tipurile de audit",
+    "viewSample": {
+      "seo": "Vezi exemplu raport SEO",
+      "security": "Vezi exemplu raport Securitate"
+    }
+  },
+  "enrollment": {
+    "title": "Finalizeaza Inregistrarea",
+    "subtitle": "Avem nevoie de cateva detalii pentru a trimite raportul",
+    "email": "Adresa de Email",
+    "emailPlaceholder": "email@exemplu.ro",
+    "name": "Nume Complet",
+    "namePlaceholder": "Ion Popescu",
+    "language": "Limba Preferata",
+    "termsAgree": "Sunt de acord cu",
+    "termsLink": "Termenii si Conditiile",
+    "privacyAgree": "Sunt de acord cu",
+    "privacyLink": "Politica de Confidentialitate",
+    "newsletterConsent": "Vreau sa primesc sfaturi si noutati despre optimizarea website-ului",
+    "signature": "Semnatura Ta",
+    "signatureHint": "Te rugam sa semnezi mai sus",
+    "signatureClear": "Sterge",
+    "completeButton": "Finalizeaza Inregistrarea"
+  },
+  "payment": {
+    "title": "Finalizeaza Plata",
+    "selectedPackage": "Ai selectat pachetul {package}",
+    "processing": "Se proceseaza plata..."
+  },
+  "complete": {
+    "title": "Esti Pregatit!",
+    "message": "Raportul tau complet este gata. Ti-am trimis si o copie pe email.",
+    "viewReport": "Vezi Raportul Complet"
+  },
+  "auditTypes": {
+    "performance": "Performanta",
+    "seo": "SEO",
+    "security": "Securitate",
+    "gdpr": "GDPR",
+    "accessibility": "Accesibilitate",
+    "technical": "Tehnic"
+  },
+  "severity": {
+    "critical": "Critic",
+    "high": "Ridicat",
+    "medium": "Mediu",
+    "low": "Scazut",
+    "info": "Informativ"
+  }
+}

@@ -11,9 +11,9 @@ from sqlalchemy import select
 import stripe
 
 from database.connection import get_db
-from database.models import User, Payment, Subscription
+from database.models import User, Payment, Subscription, Lead, Package
 from repositories.user_repo import UserRepository
-from auth.dependencies import get_current_user
+from auth.dependencies import get_current_user, get_current_user_optional
 from .config import stripe_settings, PRODUCTS
 
 router = APIRouter(prefix="/api/payments", tags=["Payments"])
@@ -23,6 +23,11 @@ router = APIRouter(prefix="/api/payments", tags=["Payments"])
 
 class CheckoutRequest(BaseModel):
     product_type: str
+
+
+class LeadCheckoutRequest(BaseModel):
+    lead_id: str
+    package_id: str
 
 
 class CheckoutResponse(BaseModel):
@@ -163,6 +168,85 @@ async def create_checkout(
         )
 
 
+@router.post("/create-lead-checkout", response_model=CheckoutResponse)
+async def create_lead_checkout(
+    data: LeadCheckoutRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """Create a Stripe checkout session for a lead (no login required)"""
+    # Get lead
+    result = await db.execute(
+        select(Lead).where(Lead.id == data.lead_id)
+    )
+    lead = result.scalar_one_or_none()
+
+    if not lead:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Lead not found"
+        )
+
+    # Get package
+    pkg_result = await db.execute(
+        select(Package).where(Package.id == data.package_id)
+    )
+    package = pkg_result.scalar_one_or_none()
+
+    if not package:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Package not found"
+        )
+
+    if package.price <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This package is free and doesn't require payment"
+        )
+
+    try:
+        # Create Stripe checkout session
+        session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": package.currency.lower(),
+                    "unit_amount": int(package.price * 100),  # Convert to cents
+                    "product_data": {
+                        "name": f"AI Web Auditor - {package.name} Package",
+                        "description": f"Website audit report with {package.audits_included} audit types"
+                    }
+                },
+                "quantity": 1
+            }],
+            mode="payment",
+            success_url=f"{stripe_settings.FRONTEND_URL}/payment/success?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{stripe_settings.FRONTEND_URL}/?cancelled=true",
+            customer_email=lead.email,
+            metadata={
+                "lead_id": lead.id,
+                "package_id": data.package_id,
+                "audit_id": lead.audit_id,
+                "type": "lead_payment"
+            }
+        )
+
+        # Update lead with session ID
+        lead.stripe_session_id = session.id
+        await db.commit()
+
+        return CheckoutResponse(
+            checkout_url=session.url,
+            session_id=session.id
+        )
+
+    except stripe.error.StripeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Stripe error: {str(e)}"
+        )
+
+
 @router.post("/webhook")
 async def stripe_webhook(
     request: Request,
@@ -201,8 +285,15 @@ async def stripe_webhook(
 
 async def handle_checkout_completed(session: dict, db: AsyncSession):
     """Handle successful checkout"""
-    user_id = session.get("client_reference_id") or session.get("metadata", {}).get("user_id")
-    product_type = session.get("metadata", {}).get("product_type")
+    metadata = session.get("metadata", {})
+
+    # Check if this is a lead payment
+    if metadata.get("type") == "lead_payment":
+        await handle_lead_payment_completed(session, db)
+        return
+
+    user_id = session.get("client_reference_id") or metadata.get("user_id")
+    product_type = metadata.get("product_type")
 
     if not user_id or not product_type:
         return
@@ -261,6 +352,41 @@ async def handle_checkout_completed(session: dict, db: AsyncSession):
         await user_repo.add_credits(user_id, product.get("credits_per_month", 20))
 
     await db.commit()
+
+
+async def handle_lead_payment_completed(session: dict, db: AsyncSession):
+    """Handle successful lead payment"""
+    metadata = session.get("metadata", {})
+    lead_id = metadata.get("lead_id")
+    package_id = metadata.get("package_id")
+
+    if not lead_id:
+        return
+
+    # Get lead
+    result = await db.execute(
+        select(Lead).where(Lead.id == lead_id)
+    )
+    lead = result.scalar_one_or_none()
+
+    if not lead:
+        return
+
+    # Update lead status
+    lead.payment_status = "paid"
+    lead.status = "converted"
+    lead.converted_at = datetime.utcnow()
+
+    # Generate invoice number
+    from leads.router import generate_reference
+    lead.invoice_number = f"INV-{generate_reference()[4:]}"  # INV-YYYYMMDD-XXXX
+
+    await db.commit()
+
+    # TODO: Send confirmation email with invoice
+    # TODO: Send audit report email
+
+    print(f"Lead payment completed: {lead_id}, package: {package_id}")
 
 
 async def handle_invoice_paid(invoice: dict, db: AsyncSession):

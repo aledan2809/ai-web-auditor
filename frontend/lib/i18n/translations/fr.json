@@ -1,0 +1,118 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succes",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "continue": "Continuer",
+    "back": "Retour",
+    "submit": "Soumettre",
+    "close": "Fermer"
+  },
+  "landing": {
+    "title": "Audit Web Gratuit",
+    "subtitle": "Obtenez des scores instantanes pour la Performance, le SEO, la Securite, le RGPD et l'Accessibilite",
+    "urlLabel": "URL du site web",
+    "urlPlaceholder": "exemple.fr ou https://exemple.fr",
+    "startButton": "Lancer l'Audit Gratuit",
+    "noCardRequired": "Pas de carte de credit requise. Obtenez vos resultats en 30 secondes.",
+    "features": {
+      "instantScores": {
+        "title": "Scores Instantanes",
+        "description": "Obtenez votre score global et la repartition par categorie immediatement"
+      },
+      "aiPowered": {
+        "title": "Analyse par IA",
+        "description": "Des algorithmes avances detectent les problemes invisibles a l'oeil nu"
+      },
+      "actionable": {
+        "title": "Rapport Actionnable",
+        "description": "Recommandations claires pour ameliorer votre site web"
+      }
+    }
+  },
+  "teaser": {
+    "auditComplete": "Audit Termine!",
+    "resultsFor": "Resultats pour",
+    "overallScore": "Score Global",
+    "categoryScores": "Scores par Categorie",
+    "issuesFound": "Problemes Trouves",
+    "preview": "Apercu",
+    "unlockFull": "Debloquez le rapport complet pour voir tous les problemes",
+    "getFullReport": "Obtenez Votre Rapport Complet",
+    "unlockDetailed": "Debloquez les problemes detailles, les recommandations et les analyses IA",
+    "choosePackage": "Choisissez Votre Forfait",
+    "scoreLabels": {
+      "excellent": "Excellent!",
+      "good": "Bien, mais des ameliorations sont possibles",
+      "needsAttention": "Necessite attention",
+      "critical": "Problemes critiques detectes"
+    }
+  },
+  "packages": {
+    "title": "Choisissez Votre Forfait de Rapport",
+    "subtitle": "Selectionnez le niveau de detail dont vous avez besoin",
+    "starter": {
+      "name": "Debutant",
+      "price": "GRATUIT",
+      "requiresShare": "Necessite le partage sur les reseaux sociaux"
+    },
+    "pro": {
+      "name": "Pro",
+      "popular": "POPULAIRE"
+    },
+    "full": {
+      "name": "Complet"
+    },
+    "continueButton": "Continuer vers l'Inscription",
+    "selectAudits": "Selectionnez vos types d'audit",
+    "viewSample": {
+      "seo": "Voir exemple de rapport SEO",
+      "security": "Voir exemple de rapport Securite"
+    }
+  },
+  "enrollment": {
+    "title": "Completez Votre Inscription",
+    "subtitle": "Nous avons besoin de quelques informations pour envoyer votre rapport",
+    "email": "Adresse Email",
+    "emailPlaceholder": "votre@email.fr",
+    "name": "Nom Complet",
+    "namePlaceholder": "Jean Dupont",
+    "language": "Langue Preferee",
+    "termsAgree": "J'accepte les",
+    "termsLink": "Conditions Generales",
+    "privacyAgree": "J'accepte la",
+    "privacyLink": "Politique de Confidentialite",
+    "newsletterConsent": "Envoyez-moi des conseils et mises a jour sur l'optimisation web",
+    "signature": "Votre Signature",
+    "signatureHint": "Veuillez signer ci-dessus",
+    "signatureClear": "Effacer",
+    "completeButton": "Terminer l'Inscription"
+  },
+  "payment": {
+    "title": "Finaliser le Paiement",
+    "selectedPackage": "Vous avez selectionne le forfait {package}",
+    "processing": "Traitement du paiement..."
+  },
+  "complete": {
+    "title": "Vous Etes Pret!",
+    "message": "Votre rapport complet est pret. Nous vous avons egalement envoye une copie par email.",
+    "viewReport": "Voir le Rapport Complet"
+  },
+  "auditTypes": {
+    "performance": "Performance",
+    "seo": "SEO",
+    "security": "Securite",
+    "gdpr": "RGPD",
+    "accessibility": "Accessibilite",
+    "technical": "Technique"
+  },
+  "severity": {
+    "critical": "Critique",
+    "high": "Eleve",
+    "medium": "Moyen",
+    "low": "Faible",
+    "info": "Info"
+  }
+}

@@ -31,6 +31,21 @@ from payments.router import router as payments_router
 # Admin
 from admin.router import router as admin_router
 
+# Leads
+from leads.router import router as leads_router
+
+# Settings
+from settings.router import router as settings_router
+
+# Competitors
+from competitors.router import router as competitors_router
+
+# Marketing
+from marketing.router import router as marketing_router
+
+# AI Agents
+from ai.agents.router import router as ai_agents_router
+
 # Schemas
 from models.schemas import (
     AuditRequest, AuditResponse, AuditResult, AuditStatus,
@@ -82,6 +97,11 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(payments_router)
 app.include_router(admin_router)
+app.include_router(leads_router)
+app.include_router(settings_router)
+app.include_router(competitors_router)
+app.include_router(marketing_router)
+app.include_router(ai_agents_router)
 
 
 # ============== BASIC ENDPOINTS ==============

@@ -190,6 +190,40 @@ export const paymentsApi = {
     api.post('/api/payments/cancel-subscription'),
 }
 
+// ============== WEBSITE GURU INTEGRATION ==============
+
+const WEBSITE_GURU_URL = process.env.NEXT_PUBLIC_WEBSITE_GURU_URL || 'http://localhost:3000'
+
+export const websiteGuruApi = {
+  sendAudit: async (audit: AuditResult) => {
+    const response = await fetch(`${WEBSITE_GURU_URL}/api/import-audit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: audit.url,
+        overall_score: audit.overall_score,
+        performance_score: audit.performance_score,
+        seo_score: audit.seo_score,
+        security_score: audit.security_score,
+        gdpr_score: audit.gdpr_score,
+        accessibility_score: audit.accessibility_score,
+        issues: audit.issues.map(issue => ({
+          category: issue.category,
+          severity: issue.severity,
+          title: issue.title,
+          description: issue.description,
+          recommendation: issue.recommendation,
+          estimated_hours: issue.estimated_hours,
+          complexity: issue.complexity
+        })),
+        source: 'ai-web-auditor',
+        source_audit_id: audit.id
+      })
+    })
+    return response.json()
+  }
+}
+
 // ============== ADMIN API ==============
 
 export const adminApi = {
@@ -213,4 +247,195 @@ export const adminApi = {
 
   getAllPayments: (page = 1, limit = 20, status?: string) =>
     api.get('/api/admin/payments', { params: { page, limit, status } }),
+}
+
+// ============== LEAD CAPTURE API ==============
+
+export interface Lead {
+  id: string
+  email: string
+  name: string
+  language: string
+  url: string
+  audit_id: string
+  package_id: string
+  selected_audits: string[]
+  signature_data?: string
+  terms_accepted_at: string
+  newsletter_consent: boolean
+  status: 'pending' | 'verified' | 'converted' | 'churned'
+  created_at: string
+  converted_at?: string
+}
+
+export interface EnrollmentRequest {
+  email: string
+  name: string
+  language: string
+  audit_id: string
+  package_id: string
+  selected_audits: string[]
+  signature_data?: string
+  newsletter_consent: boolean
+  fingerprint?: string
+  ip_address?: string
+  user_agent?: string
+  terms_hash?: string
+}
+
+export interface PackageConfig {
+  id: string
+  name: string
+  price: number
+  currency: string
+  audits_included: number
+  total_audits: number
+  features: string[]
+  popular?: boolean
+  requires_share?: boolean
+  pdf_type: 'none' | 'basic' | 'professional'
+  is_active: boolean
+}
+
+export const leadsApi = {
+  // Create a new lead (enrollment)
+  createLead: (data: EnrollmentRequest) =>
+    api.post<{ success: boolean; lead_id: string; reference: string }>('/api/leads/enroll', data),
+
+  // Get lead status
+  getLeadStatus: (leadId: string) =>
+    api.get<Lead>(`/api/leads/${leadId}`),
+
+  // Verify email
+  verifyEmail: (token: string) =>
+    api.post<{ success: boolean }>('/api/leads/verify-email', { token }),
+
+  // Get available packages (public)
+  getPackages: () =>
+    api.get<PackageConfig[]>('/api/packages'),
+}
+
+// ============== SUPER ADMIN SETTINGS API ==============
+
+export interface PricingSettings {
+  packages: PackageConfig[]
+  hourly_rate: number
+  currency: string
+  vat_rate: number
+  company_details: {
+    name: string
+    address: string
+    vat_number?: string
+    bank_name?: string
+    bank_account?: string
+    swift?: string
+  }
+}
+
+export const settingsApi = {
+  // Get pricing settings
+  getPricingSettings: () =>
+    api.get<PricingSettings>('/api/admin/settings/pricing'),
+
+  // Update pricing settings
+  updatePricingSettings: (data: Partial<PricingSettings>) =>
+    api.patch<PricingSettings>('/api/admin/settings/pricing', data),
+
+  // Update single package
+  updatePackage: (packageId: string, data: Partial<PackageConfig>) =>
+    api.patch<PackageConfig>(`/api/admin/settings/packages/${packageId}`, data),
+}
+
+// ============== COMPETITOR MONITORING API ==============
+
+export interface Competitor {
+  id: string
+  name: string
+  url: string
+  domain: string
+  is_active: boolean
+  monitor_frequency: 'daily' | 'weekly' | 'monthly'
+  latest_overall_score?: number
+  latest_performance_score?: number
+  latest_seo_score?: number
+  latest_security_score?: number
+  latest_gdpr_score?: number
+  latest_accessibility_score?: number
+  score_change: number
+  last_audit_at?: string
+  created_at: string
+}
+
+export interface CompetitorAudit {
+  id: string
+  overall_score: number
+  performance_score?: number
+  seo_score?: number
+  security_score?: number
+  gdpr_score?: number
+  accessibility_score?: number
+  score_change: number
+  created_at: string
+}
+
+export interface ComparisonData {
+  my_url: string
+  my_scores: {
+    overall: number
+    performance?: number
+    seo?: number
+    security?: number
+    gdpr?: number
+    accessibility?: number
+  }
+  competitors: {
+    id: string
+    name: string
+    url: string
+    domain: string
+    scores: {
+      overall: number
+      performance?: number
+      seo?: number
+      security?: number
+      gdpr?: number
+      accessibility?: number
+    }
+    score_change: number
+    last_audit_at?: string
+  }[]
+}
+
+export const competitorsApi = {
+  // Get all competitors
+  getCompetitors: () =>
+    api.get<Competitor[]>('/api/competitors'),
+
+  // Add a new competitor
+  addCompetitor: (name: string, url: string, monitor_frequency: string = 'weekly') =>
+    api.post<Competitor>('/api/competitors', { name, url, monitor_frequency }),
+
+  // Get a specific competitor
+  getCompetitor: (competitorId: string) =>
+    api.get<Competitor>(`/api/competitors/${competitorId}`),
+
+  // Update a competitor
+  updateCompetitor: (competitorId: string, data: { name?: string; is_active?: boolean; monitor_frequency?: string }) =>
+    api.patch<Competitor>(`/api/competitors/${competitorId}`, data),
+
+  // Delete a competitor
+  deleteCompetitor: (competitorId: string) =>
+    api.delete(`/api/competitors/${competitorId}`),
+
+  // Get competitor audit history
+  getCompetitorHistory: (competitorId: string, limit: number = 30) =>
+    api.get<CompetitorAudit[]>(`/api/competitors/${competitorId}/history`, { params: { limit } }),
+
+  // Trigger a new audit for a competitor
+  triggerAudit: (competitorId: string) =>
+    api.post<{ success: boolean; audit_id: string }>(`/api/competitors/${competitorId}/audit`),
+
+  // Compare with all competitors
+  getComparison: (myAuditId?: string) =>
+    api.get<ComparisonData>('/api/competitors/compare/all', { params: { my_audit_id: myAuditId } }),
 }

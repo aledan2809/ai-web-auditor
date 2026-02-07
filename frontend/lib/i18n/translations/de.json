@@ -1,0 +1,118 @@
+{
+  "common": {
+    "loading": "Laden...",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "continue": "Weiter",
+    "back": "Zuruck",
+    "submit": "Absenden",
+    "close": "Schliessen"
+  },
+  "landing": {
+    "title": "Kostenloser Website-Audit",
+    "subtitle": "Erhalten Sie sofortige Bewertungen fur Leistung, SEO, Sicherheit, DSGVO und Barrierefreiheit",
+    "urlLabel": "Website-URL",
+    "urlPlaceholder": "beispiel.de oder https://beispiel.de",
+    "startButton": "Kostenlosen Audit starten",
+    "noCardRequired": "Keine Kreditkarte erforderlich. Erhalten Sie Ihre Ergebnisse in 30 Sekunden.",
+    "features": {
+      "instantScores": {
+        "title": "Sofortige Ergebnisse",
+        "description": "Erhalten Sie sofort Ihre Gesamtbewertung und Kategorieaufschlusselung"
+      },
+      "aiPowered": {
+        "title": "KI-gestutzte Analyse",
+        "description": "Fortschrittliche Algorithmen erkennen Probleme, die dem menschlichen Auge entgehen"
+      },
+      "actionable": {
+        "title": "Umsetzbarer Bericht",
+        "description": "Klare Empfehlungen zur Verbesserung Ihrer Website"
+      }
+    }
+  },
+  "teaser": {
+    "auditComplete": "Audit abgeschlossen!",
+    "resultsFor": "Ergebnisse fur",
+    "overallScore": "Gesamtbewertung",
+    "categoryScores": "Kategorie-Bewertungen",
+    "issuesFound": "Gefundene Probleme",
+    "preview": "Vorschau",
+    "unlockFull": "Vollstandigen Bericht freischalten, um alle Probleme zu sehen",
+    "getFullReport": "Holen Sie sich Ihren vollstandigen Audit-Bericht",
+    "unlockDetailed": "Detaillierte Probleme, Empfehlungen und KI-gestutzte Erkenntnisse freischalten",
+    "choosePackage": "Wahlen Sie Ihr Paket",
+    "scoreLabels": {
+      "excellent": "Ausgezeichnet!",
+      "good": "Gut, aber Verbesserungspotential vorhanden",
+      "needsAttention": "Braucht Aufmerksamkeit",
+      "critical": "Kritische Probleme gefunden"
+    }
+  },
+  "packages": {
+    "title": "Wahlen Sie Ihr Berichtspaket",
+    "subtitle": "Wahlen Sie den gewunschten Detailgrad",
+    "starter": {
+      "name": "Starter",
+      "price": "KOSTENLOS",
+      "requiresShare": "Erfordert Teilen in sozialen Medien"
+    },
+    "pro": {
+      "name": "Pro",
+      "popular": "BELIEBT"
+    },
+    "full": {
+      "name": "Vollstandig"
+    },
+    "continueButton": "Weiter zur Registrierung",
+    "selectAudits": "Wahlen Sie Ihre Audit-Typen",
+    "viewSample": {
+      "seo": "SEO-Beispielbericht ansehen",
+      "security": "Sicherheits-Beispielbericht ansehen"
+    }
+  },
+  "enrollment": {
+    "title": "Registrierung abschliessen",
+    "subtitle": "Wir benotigen einige Angaben, um Ihren Bericht zu senden",
+    "email": "E-Mail-Adresse",
+    "emailPlaceholder": "ihre@email.de",
+    "name": "Vollstandiger Name",
+    "namePlaceholder": "Max Mustermann",
+    "language": "Bevorzugte Sprache",
+    "termsAgree": "Ich stimme den",
+    "termsLink": "Allgemeinen Geschaftsbedingungen",
+    "privacyAgree": "Ich stimme der",
+    "privacyLink": "Datenschutzerklarung",
+    "newsletterConsent": "Senden Sie mir Tipps und Updates zur Website-Optimierung",
+    "signature": "Ihre Unterschrift",
+    "signatureHint": "Bitte unterschreiben Sie oben",
+    "signatureClear": "Loschen",
+    "completeButton": "Registrierung abschliessen"
+  },
+  "payment": {
+    "title": "Zahlung abschliessen",
+    "selectedPackage": "Sie haben das {package}-Paket gewahlt",
+    "processing": "Zahlung wird verarbeitet..."
+  },
+  "complete": {
+    "title": "Alles erledigt!",
+    "message": "Ihr vollstandiger Audit-Bericht ist fertig. Wir haben Ihnen auch eine Kopie per E-Mail gesendet.",
+    "viewReport": "Vollstandigen Bericht ansehen"
+  },
+  "auditTypes": {
+    "performance": "Leistung",
+    "seo": "SEO",
+    "security": "Sicherheit",
+    "gdpr": "DSGVO",
+    "accessibility": "Barrierefreiheit",
+    "technical": "Technisch"
+  },
+  "severity": {
+    "critical": "Kritisch",
+    "high": "Hoch",
+    "medium": "Mittel",
+    "low": "Niedrig",
+    "info": "Info"
+  }
+}

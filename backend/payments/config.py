@@ -15,6 +15,7 @@ class StripeSettings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 stripe_settings = StripeSettings()

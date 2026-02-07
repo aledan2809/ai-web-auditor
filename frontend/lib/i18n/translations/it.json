@@ -1,0 +1,118 @@
+{
+  "common": {
+    "loading": "Caricamento...",
+    "error": "Errore",
+    "success": "Successo",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "continue": "Continua",
+    "back": "Indietro",
+    "submit": "Invia",
+    "close": "Chiudi"
+  },
+  "landing": {
+    "title": "Audit Web Gratuito",
+    "subtitle": "Ottieni punteggi istantanei per Prestazioni, SEO, Sicurezza, GDPR e Accessibilita",
+    "urlLabel": "URL del sito web",
+    "urlPlaceholder": "esempio.it o https://esempio.it",
+    "startButton": "Inizia l'Audit Gratuito",
+    "noCardRequired": "Nessuna carta di credito richiesta. Ottieni i risultati in 30 secondi.",
+    "features": {
+      "instantScores": {
+        "title": "Punteggi Istantanei",
+        "description": "Ottieni subito il punteggio complessivo e la suddivisione per categoria"
+      },
+      "aiPowered": {
+        "title": "Analisi con IA",
+        "description": "Algoritmi avanzati rilevano problemi invisibili all'occhio umano"
+      },
+      "actionable": {
+        "title": "Report Operativo",
+        "description": "Raccomandazioni chiare per migliorare il tuo sito web"
+      }
+    }
+  },
+  "teaser": {
+    "auditComplete": "Audit Completato!",
+    "resultsFor": "Risultati per",
+    "overallScore": "Punteggio Complessivo",
+    "categoryScores": "Punteggi per Categoria",
+    "issuesFound": "Problemi Trovati",
+    "preview": "Anteprima",
+    "unlockFull": "Sblocca il report completo per vedere tutti i problemi",
+    "getFullReport": "Ottieni il Tuo Report Completo",
+    "unlockDetailed": "Sblocca problemi dettagliati, raccomandazioni e analisi IA",
+    "choosePackage": "Scegli il Tuo Pacchetto",
+    "scoreLabels": {
+      "excellent": "Eccellente!",
+      "good": "Buono, ma c'e margine di miglioramento",
+      "needsAttention": "Richiede attenzione",
+      "critical": "Problemi critici trovati"
+    }
+  },
+  "packages": {
+    "title": "Scegli il Tuo Pacchetto Report",
+    "subtitle": "Seleziona il livello di dettaglio di cui hai bisogno",
+    "starter": {
+      "name": "Base",
+      "price": "GRATIS",
+      "requiresShare": "Richiede condivisione sui social media"
+    },
+    "pro": {
+      "name": "Pro",
+      "popular": "POPOLARE"
+    },
+    "full": {
+      "name": "Completo"
+    },
+    "continueButton": "Continua alla Registrazione",
+    "selectAudits": "Seleziona i tipi di audit",
+    "viewSample": {
+      "seo": "Vedi esempio report SEO",
+      "security": "Vedi esempio report Sicurezza"
+    }
+  },
+  "enrollment": {
+    "title": "Completa la Registrazione",
+    "subtitle": "Abbiamo bisogno di alcuni dati per inviare il tuo report",
+    "email": "Indirizzo Email",
+    "emailPlaceholder": "tua@email.it",
+    "name": "Nome Completo",
+    "namePlaceholder": "Mario Rossi",
+    "language": "Lingua Preferita",
+    "termsAgree": "Accetto i",
+    "termsLink": "Termini e Condizioni",
+    "privacyAgree": "Accetto la",
+    "privacyLink": "Privacy Policy",
+    "newsletterConsent": "Inviami consigli e aggiornamenti sull'ottimizzazione web",
+    "signature": "La Tua Firma",
+    "signatureHint": "Per favore firma sopra",
+    "signatureClear": "Cancella",
+    "completeButton": "Completa Registrazione"
+  },
+  "payment": {
+    "title": "Completa il Pagamento",
+    "selectedPackage": "Hai selezionato il pacchetto {package}",
+    "processing": "Elaborazione pagamento..."
+  },
+  "complete": {
+    "title": "Tutto Pronto!",
+    "message": "Il tuo report completo e pronto. Ti abbiamo anche inviato una copia via email.",
+    "viewReport": "Visualizza Report Completo"
+  },
+  "auditTypes": {
+    "performance": "Prestazioni",
+    "seo": "SEO",
+    "security": "Sicurezza",
+    "gdpr": "GDPR",
+    "accessibility": "Accessibilita",
+    "technical": "Tecnico"
+  },
+  "severity": {
+    "critical": "Critico",
+    "high": "Alto",
+    "medium": "Medio",
+    "low": "Basso",
+    "info": "Info"
+  }
+}

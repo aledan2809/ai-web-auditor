@@ -1,0 +1,118 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Exito",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "continue": "Continuar",
+    "back": "Atras",
+    "submit": "Enviar",
+    "close": "Cerrar"
+  },
+  "landing": {
+    "title": "Auditoria Web Gratuita",
+    "subtitle": "Obtén puntuaciones instantáneas de Rendimiento, SEO, Seguridad, GDPR y Accesibilidad",
+    "urlLabel": "URL del sitio web",
+    "urlPlaceholder": "ejemplo.es o https://ejemplo.es",
+    "startButton": "Iniciar Auditoria Gratuita",
+    "noCardRequired": "No se requiere tarjeta de crédito. Obtén tus resultados en 30 segundos.",
+    "features": {
+      "instantScores": {
+        "title": "Puntuaciones Instantáneas",
+        "description": "Obtén tu puntuación general y desglose por categorías inmediatamente"
+      },
+      "aiPowered": {
+        "title": "Análisis con IA",
+        "description": "Algoritmos avanzados detectan problemas invisibles al ojo humano"
+      },
+      "actionable": {
+        "title": "Informe Accionable",
+        "description": "Recomendaciones claras para mejorar tu sitio web"
+      }
+    }
+  },
+  "teaser": {
+    "auditComplete": "Auditoria Completada!",
+    "resultsFor": "Resultados para",
+    "overallScore": "Puntuación General",
+    "categoryScores": "Puntuaciones por Categoría",
+    "issuesFound": "Problemas Encontrados",
+    "preview": "Vista previa",
+    "unlockFull": "Desbloquea el informe completo para ver todos los problemas",
+    "getFullReport": "Obtén Tu Informe Completo",
+    "unlockDetailed": "Desbloquea problemas detallados, recomendaciones y análisis con IA",
+    "choosePackage": "Elige Tu Paquete",
+    "scoreLabels": {
+      "excellent": "Excelente!",
+      "good": "Bien, pero hay margen de mejora",
+      "needsAttention": "Necesita atención",
+      "critical": "Problemas críticos encontrados"
+    }
+  },
+  "packages": {
+    "title": "Elige Tu Paquete de Informe",
+    "subtitle": "Selecciona el nivel de detalle que necesitas",
+    "starter": {
+      "name": "Inicial",
+      "price": "GRATIS",
+      "requiresShare": "Requiere compartir en redes sociales"
+    },
+    "pro": {
+      "name": "Pro",
+      "popular": "POPULAR"
+    },
+    "full": {
+      "name": "Completo"
+    },
+    "continueButton": "Continuar al Registro",
+    "selectAudits": "Selecciona los tipos de auditoría",
+    "viewSample": {
+      "seo": "Ver ejemplo de informe SEO",
+      "security": "Ver ejemplo de informe de Seguridad"
+    }
+  },
+  "enrollment": {
+    "title": "Completa Tu Registro",
+    "subtitle": "Necesitamos algunos datos para enviar tu informe",
+    "email": "Correo Electrónico",
+    "emailPlaceholder": "tu@email.es",
+    "name": "Nombre Completo",
+    "namePlaceholder": "Juan García",
+    "language": "Idioma Preferido",
+    "termsAgree": "Acepto los",
+    "termsLink": "Términos y Condiciones",
+    "privacyAgree": "Acepto la",
+    "privacyLink": "Política de Privacidad",
+    "newsletterConsent": "Envíame consejos y actualizaciones sobre optimización web",
+    "signature": "Tu Firma",
+    "signatureHint": "Por favor firma arriba",
+    "signatureClear": "Borrar",
+    "completeButton": "Completar Registro"
+  },
+  "payment": {
+    "title": "Completar Pago",
+    "selectedPackage": "Has seleccionado el paquete {package}",
+    "processing": "Procesando pago..."
+  },
+  "complete": {
+    "title": "Todo Listo!",
+    "message": "Tu informe completo está listo. También te hemos enviado una copia por email.",
+    "viewReport": "Ver Informe Completo"
+  },
+  "auditTypes": {
+    "performance": "Rendimiento",
+    "seo": "SEO",
+    "security": "Seguridad",
+    "gdpr": "GDPR",
+    "accessibility": "Accesibilidad",
+    "technical": "Técnico"
+  },
+  "severity": {
+    "critical": "Crítico",
+    "high": "Alto",
+    "medium": "Medio",
+    "low": "Bajo",
+    "info": "Info"
+  }
+}

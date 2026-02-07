@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   Users, FileText, CreditCard, TrendingUp,
-  Loader2, AlertCircle, BarChart3
+  Loader2, AlertCircle, BarChart3, Settings
 } from 'lucide-react'
 import { adminApi, DashboardStats } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
@@ -184,27 +184,34 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick links */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
         <Link
           href="/admin/users"
           className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow flex items-center gap-3"
         >
           <Users className="w-5 h-5 text-primary-600" />
-          <span className="font-medium">Gestioneaza utilizatori</span>
+          <span className="font-medium">Manage Users</span>
         </Link>
         <Link
           href="/admin/audits"
           className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow flex items-center gap-3"
         >
           <FileText className="w-5 h-5 text-primary-600" />
-          <span className="font-medium">Toate auditurile</span>
+          <span className="font-medium">All Audits</span>
         </Link>
         <Link
           href="/admin/payments"
           className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow flex items-center gap-3"
         >
           <CreditCard className="w-5 h-5 text-primary-600" />
-          <span className="font-medium">Istoric plati</span>
+          <span className="font-medium">Payment History</span>
+        </Link>
+        <Link
+          href="/admin/settings"
+          className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow flex items-center gap-3"
+        >
+          <Settings className="w-5 h-5 text-primary-600" />
+          <span className="font-medium">Pricing Settings</span>
         </Link>
       </div>
     </div>
