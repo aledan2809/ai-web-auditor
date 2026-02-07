@@ -41,6 +41,7 @@ class AuditRequest(BaseModel):
     include_screenshots: bool = True
     mobile_test: bool = True
     competitor_urls: List[HttpUrl] = []
+    lang: str = "ro"  # "ro" or "en"
 
 
 class APITestRequest(BaseModel):

@@ -12,6 +12,7 @@ import re
 from models.schemas import (
     GDPRMetrics, AuditIssue, AuditType, Severity
 )
+from translations import t
 
 
 @dataclass
@@ -82,7 +83,7 @@ class GDPRAuditor:
             r'iubenda'
         ]
 
-    async def audit(self, url: str) -> GDPRResult:
+    async def audit(self, url: str, lang: str = "ro") -> GDPRResult:
         """Run GDPR compliance audit"""
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
             response = await client.get(url)
@@ -122,7 +123,7 @@ class GDPRAuditor:
             )
 
             # Generate issues
-            issues = self._generate_issues(metrics, url, trackers, consent_ui)
+            issues = self._generate_issues(metrics, url, trackers, consent_ui, lang)
 
             # Calculate score
             score = self._calculate_score(metrics)
@@ -281,20 +282,24 @@ class GDPRAuditor:
         metrics: GDPRMetrics,
         url: str,
         trackers: List[str],
-        consent_ui: dict
+        consent_ui: dict,
+        lang: str = "ro"
     ) -> List[AuditIssue]:
         """Generate GDPR compliance issues"""
         issues = []
 
         # Cookie banner missing
         if not metrics.cookie_banner_present and trackers:
+            no_banner_title = "Missing cookie consent banner" if lang == "en" else "Lipseste banner-ul de cookie consent"
+            no_banner_desc = f"Site uses {len(trackers)} trackers but has no GDPR consent banner." if lang == "en" else f"Site-ul foloseste {len(trackers)} trackere dar nu are banner de consimtamant GDPR."
+            no_banner_rec = "Implement a cookie consent system (e.g., CookieBot, OneTrust) that asks for user consent." if lang == "en" else "Implementati un sistem de cookie consent (ex: CookieBot, OneTrust) care cere acordul utilizatorilor."
             issues.append(AuditIssue(
                 id=f"gdpr_no_banner_{hash(url)}",
                 category=AuditType.GDPR,
                 severity=Severity.CRITICAL,
-                title="Lipsește banner-ul de cookie consent",
-                description=f"Site-ul folosește {len(trackers)} trackere dar nu are banner de consimțământ GDPR.",
-                recommendation="Implementați un sistem de cookie consent (ex: CookieBot, OneTrust) care cere acordul utilizatorilor.",
+                title=no_banner_title,
+                description=no_banner_desc,
+                recommendation=no_banner_rec,
                 estimated_hours=8.0,
                 complexity="complex"
             ))
@@ -305,35 +310,41 @@ class GDPRAuditor:
                 id=f"gdpr_no_privacy_{hash(url)}",
                 category=AuditType.GDPR,
                 severity=Severity.CRITICAL,
-                title="Lipsește politica de confidențialitate",
-                description="Nu s-a găsit link către politica de confidențialitate.",
-                recommendation="Adăugați o pagină de Privacy Policy care explică colectarea și procesarea datelor.",
+                title=t("gdpr_no_privacy", lang),
+                description=t("gdpr_no_privacy_desc", lang),
+                recommendation=t("gdpr_no_privacy_rec", lang),
                 estimated_hours=4.0,
                 complexity="medium"
             ))
 
         # No cookie categories
         if not metrics.cookie_categories_explained and metrics.cookie_banner_present:
+            no_categories_title = "Cookie categories not explained" if lang == "en" else "Categoriile de cookie-uri nu sunt explicate"
+            no_categories_desc = "Cookie banner does not provide information about cookie types." if lang == "en" else "Banner-ul de cookie nu ofera informatii despre tipurile de cookie-uri."
+            no_categories_rec = "Add cookie categories (Necessary, Functional, Analytics, Marketing) with descriptions." if lang == "en" else "Adaugati categorii de cookie-uri (Necesare, Functionale, Analitice, Marketing) cu descrieri."
             issues.append(AuditIssue(
                 id=f"gdpr_no_categories_{hash(url)}",
                 category=AuditType.GDPR,
                 severity=Severity.HIGH,
-                title="Categoriile de cookie-uri nu sunt explicate",
-                description="Banner-ul de cookie nu oferă informații despre tipurile de cookie-uri.",
-                recommendation="Adăugați categorii de cookie-uri (Necesare, Funcționale, Analitice, Marketing) cu descrieri.",
+                title=no_categories_title,
+                description=no_categories_desc,
+                recommendation=no_categories_rec,
                 estimated_hours=3.0,
                 complexity="medium"
             ))
 
         # No reject/opt-out option
         if not metrics.opt_out_option and metrics.cookie_banner_present:
+            no_reject_title = "Missing reject option" if lang == "en" else "Lipseste optiunea de refuz"
+            no_reject_desc = "Users cannot reject non-essential cookies." if lang == "en" else "Utilizatorii nu pot refuza cookie-urile non-esentiale."
+            no_reject_rec = "Add a 'Reject all' or 'Only necessary' button as visible as 'Accept'." if lang == "en" else "Adaugati un buton 'Refuza toate' sau 'Doar necesare' la fel de vizibil ca 'Accept'."
             issues.append(AuditIssue(
                 id=f"gdpr_no_reject_{hash(url)}",
                 category=AuditType.GDPR,
                 severity=Severity.HIGH,
-                title="Lipsește opțiunea de refuz",
-                description="Utilizatorii nu pot refuza cookie-urile non-esențiale.",
-                recommendation="Adăugați un buton 'Refuză toate' sau 'Doar necesare' la fel de vizibil ca 'Accept'.",
+                title=no_reject_title,
+                description=no_reject_desc,
+                recommendation=no_reject_rec,
                 estimated_hours=2.0,
                 complexity="simple"
             ))
@@ -341,39 +352,48 @@ class GDPRAuditor:
         # Third-party trackers
         if trackers:
             tracker_list = ', '.join(trackers)
+            trackers_title = f"{len(trackers)} tracking services detected" if lang == "en" else f"{len(trackers)} servicii de tracking detectate"
+            trackers_desc = f"Trackers found: {tracker_list}" if lang == "en" else f"Trackere gasite: {tracker_list}"
+            trackers_rec = "Document all trackers in the privacy policy and ensure they are loaded only after consent." if lang == "en" else "Documentati toate trackerele in politica de confidentialitate si asigurati-va ca sunt incarcate doar dupa consimtamant."
             issues.append(AuditIssue(
                 id=f"gdpr_trackers_{hash(url)}",
                 category=AuditType.GDPR,
                 severity=Severity.MEDIUM,
-                title=f"{len(trackers)} servicii de tracking detectate",
-                description=f"Trackere găsite: {tracker_list}",
-                recommendation="Documentați toate trackerele în politica de confidențialitate și asigurați-vă că sunt încărcate doar după consimțământ.",
+                title=trackers_title,
+                description=trackers_desc,
+                recommendation=trackers_rec,
                 estimated_hours=2.0,
                 complexity="medium"
             ))
 
         # Google Analytics without consent
         if metrics.google_analytics and not metrics.cookie_banner_present:
+            ga_title = "Google Analytics without consent" if lang == "en" else "Google Analytics fara consimtamant"
+            ga_desc = "Google Analytics is loaded before obtaining user consent." if lang == "en" else "Google Analytics este incarcat inainte de a obtine consimtamantul utilizatorului."
+            ga_rec = "Configure GA to load only after analytics cookies are accepted." if lang == "en" else "Configurati GA sa se incarce doar dupa acceptarea cookie-urilor de analiza."
             issues.append(AuditIssue(
                 id=f"gdpr_ga_no_consent_{hash(url)}",
                 category=AuditType.GDPR,
                 severity=Severity.HIGH,
-                title="Google Analytics fără consimțământ",
-                description="Google Analytics este încărcat înainte de a obține consimțământul utilizatorului.",
-                recommendation="Configurați GA să se încarce doar după acceptarea cookie-urilor de analiză.",
+                title=ga_title,
+                description=ga_desc,
+                recommendation=ga_rec,
                 estimated_hours=3.0,
                 complexity="medium"
             ))
 
         # Facebook Pixel
         if metrics.facebook_pixel:
+            fb_title = "Facebook Pixel detected" if lang == "en" else "Facebook Pixel detectat"
+            fb_desc = "Facebook Pixel collects data and requires explicit consent." if lang == "en" else "Facebook Pixel colecteaza date si necesita consimtamant explicit."
+            fb_rec = "Ensure FB Pixel is loaded only after consent and is documented in Privacy Policy." if lang == "en" else "Asigurati-va ca FB Pixel se incarca doar dupa consimtamant si este documentat in Privacy Policy."
             issues.append(AuditIssue(
                 id=f"gdpr_fb_pixel_{hash(url)}",
                 category=AuditType.GDPR,
                 severity=Severity.MEDIUM,
-                title="Facebook Pixel detectat",
-                description="Facebook Pixel colectează date și necesită consimțământ explicit.",
-                recommendation="Asigurați-vă că FB Pixel se încarcă doar după consimțământ și este documentat în Privacy Policy.",
+                title=fb_title,
+                description=fb_desc,
+                recommendation=fb_rec,
                 estimated_hours=2.0,
                 complexity="medium"
             ))

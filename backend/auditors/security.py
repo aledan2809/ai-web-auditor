@@ -15,6 +15,7 @@ import re
 from models.schemas import (
     SecurityMetrics, AuditIssue, AuditType, Severity
 )
+from translations import t
 
 
 @dataclass
@@ -37,7 +38,7 @@ class SecurityAuditor:
             'referrer-policy'
         ]
 
-    async def audit(self, url: str) -> SecurityResult:
+    async def audit(self, url: str, lang: str = "ro") -> SecurityResult:
         """Run security audit on URL"""
         parsed = urlparse(url)
         domain = parsed.netloc
@@ -85,7 +86,7 @@ class SecurityAuditor:
         )
 
         # Generate issues
-        issues = self._generate_issues(metrics, url, headers)
+        issues = self._generate_issues(metrics, url, headers, lang)
 
         # Calculate score
         score = self._calculate_score(metrics)
@@ -193,7 +194,8 @@ class SecurityAuditor:
         self,
         metrics: SecurityMetrics,
         url: str,
-        headers: dict
+        headers: dict,
+        lang: str = "ro"
     ) -> List[AuditIssue]:
         """Generate security issues"""
         issues = []
@@ -204,33 +206,39 @@ class SecurityAuditor:
                 id=f"sec_no_https_{hash(url)}",
                 category=AuditType.SECURITY,
                 severity=Severity.CRITICAL,
-                title="Site-ul nu folosește HTTPS",
-                description="Conexiunea nu este securizată. Datele pot fi interceptate.",
-                recommendation="Instalați un certificat SSL și forțați HTTPS pe întregul site.",
+                title=t("sec_no_https", lang),
+                description=t("sec_no_https_desc", lang),
+                recommendation=t("sec_no_https_rec", lang),
                 estimated_hours=4.0,
                 complexity="medium"
             ))
 
         # SSL
         if not metrics.ssl_valid:
+            ssl_invalid_title = "Invalid SSL certificate" if lang == "en" else "Certificat SSL invalid"
+            ssl_invalid_desc = "SSL certificate is invalid or expired." if lang == "en" else "Certificatul SSL nu este valid sau a expirat."
+            ssl_invalid_rec = "Renew or install a valid SSL certificate." if lang == "en" else "Reinnoiti sau instalati un certificat SSL valid."
             issues.append(AuditIssue(
                 id=f"sec_invalid_ssl_{hash(url)}",
                 category=AuditType.SECURITY,
                 severity=Severity.CRITICAL,
-                title="Certificat SSL invalid",
-                description="Certificatul SSL nu este valid sau a expirat.",
-                recommendation="Reînnoiți sau instalați un certificat SSL valid.",
+                title=ssl_invalid_title,
+                description=ssl_invalid_desc,
+                recommendation=ssl_invalid_rec,
                 estimated_hours=2.0,
                 complexity="simple"
             ))
         elif metrics.ssl_expiry_days and metrics.ssl_expiry_days < 30:
+            ssl_expiring_title = f"SSL certificate expires in {metrics.ssl_expiry_days} days" if lang == "en" else f"Certificat SSL expira in {metrics.ssl_expiry_days} zile"
+            ssl_expiring_desc = "SSL certificate will expire soon." if lang == "en" else "Certificatul SSL va expira in curand."
+            ssl_expiring_rec = "Renew SSL certificate before expiration." if lang == "en" else "Reinnoiti certificatul SSL inainte de expirare."
             issues.append(AuditIssue(
                 id=f"sec_ssl_expiring_{hash(url)}",
                 category=AuditType.SECURITY,
                 severity=Severity.HIGH,
-                title=f"Certificat SSL expiră în {metrics.ssl_expiry_days} zile",
-                description="Certificatul SSL va expira în curând.",
-                recommendation="Reînnoiți certificatul SSL înainte de expirare.",
+                title=ssl_expiring_title,
+                description=ssl_expiring_desc,
+                recommendation=ssl_expiring_rec,
                 estimated_hours=1.0,
                 complexity="simple"
             ))
@@ -241,9 +249,9 @@ class SecurityAuditor:
                 id=f"sec_no_hsts_{hash(url)}",
                 category=AuditType.SECURITY,
                 severity=Severity.HIGH,
-                title="Lipsește header-ul HSTS",
-                description="Strict-Transport-Security nu este configurat.",
-                recommendation="Adăugați header-ul: Strict-Transport-Security: max-age=31536000; includeSubDomains",
+                title=t("sec_no_hsts", lang),
+                description=t("sec_no_hsts_desc", lang),
+                recommendation=t("sec_no_hsts_rec", lang),
                 estimated_hours=1.0,
                 complexity="simple"
             ))
@@ -253,9 +261,9 @@ class SecurityAuditor:
                 id=f"sec_no_csp_{hash(url)}",
                 category=AuditType.SECURITY,
                 severity=Severity.HIGH,
-                title="Lipsește Content Security Policy",
-                description="CSP nu este configurat, site-ul e vulnerabil la XSS.",
-                recommendation="Implementați un Content-Security-Policy header restrictiv.",
+                title=t("sec_no_csp", lang),
+                description=t("sec_no_csp_desc", lang),
+                recommendation=t("sec_no_csp_rec", lang),
                 estimated_hours=4.0,
                 complexity="complex"
             ))
@@ -265,9 +273,9 @@ class SecurityAuditor:
                 id=f"sec_no_xframe_{hash(url)}",
                 category=AuditType.SECURITY,
                 severity=Severity.MEDIUM,
-                title="Lipsește X-Frame-Options",
-                description="Site-ul poate fi încadrat în iframe (clickjacking).",
-                recommendation="Adăugați: X-Frame-Options: DENY sau SAMEORIGIN",
+                title=t("sec_no_xframe", lang),
+                description=t("sec_no_xframe_desc", lang),
+                recommendation=t("sec_no_xframe_rec", lang),
                 estimated_hours=0.5,
                 complexity="simple"
             ))
@@ -277,34 +285,40 @@ class SecurityAuditor:
                 id=f"sec_no_xcontent_{hash(url)}",
                 category=AuditType.SECURITY,
                 severity=Severity.LOW,
-                title="Lipsește X-Content-Type-Options",
-                description="Browser-ul poate interpreta greșit MIME types.",
-                recommendation="Adăugați: X-Content-Type-Options: nosniff",
+                title=t("sec_no_xcontent", lang),
+                description=t("sec_no_xcontent_desc", lang),
+                recommendation=t("sec_no_xcontent_rec", lang),
                 estimated_hours=0.5,
                 complexity="simple"
             ))
 
         # Exposed data
         if metrics.exposed_api_keys:
+            exposed_keys_title = "Possible API keys exposed in code" if lang == "en" else "Posibile chei API expuse in cod"
+            exposed_keys_desc = "Patterns resembling API keys detected in source code." if lang == "en" else "S-au detectat pattern-uri ce seamana cu chei API in codul sursa."
+            exposed_keys_rec = "Remove API keys from frontend code. Use environment variables on the server." if lang == "en" else "Eliminati cheile API din codul frontend. Folositi variabile de environment pe server."
             issues.append(AuditIssue(
                 id=f"sec_exposed_keys_{hash(url)}",
                 category=AuditType.SECURITY,
                 severity=Severity.CRITICAL,
-                title="Posibile chei API expuse în cod",
-                description="S-au detectat pattern-uri ce seamănă cu chei API în codul sursă.",
-                recommendation="Eliminați cheile API din codul frontend. Folosiți variabile de environment pe server.",
+                title=exposed_keys_title,
+                description=exposed_keys_desc,
+                recommendation=exposed_keys_rec,
                 estimated_hours=2.0,
                 complexity="medium"
             ))
 
         if metrics.exposed_emails:
+            exposed_emails_title = f"{len(metrics.exposed_emails)} email addresses exposed" if lang == "en" else f"{len(metrics.exposed_emails)} adrese email expuse"
+            exposed_emails_desc = f"Emails found: {', '.join(metrics.exposed_emails[:3])}..." if lang == "en" else f"Email-uri gasite: {', '.join(metrics.exposed_emails[:3])}..."
+            exposed_emails_rec = "Hide emails or use contact forms to avoid spam." if lang == "en" else "Ascundeti email-urile sau folositi formulare de contact pentru a evita spam-ul."
             issues.append(AuditIssue(
                 id=f"sec_exposed_emails_{hash(url)}",
                 category=AuditType.SECURITY,
                 severity=Severity.LOW,
-                title=f"{len(metrics.exposed_emails)} adrese email expuse",
-                description=f"Email-uri găsite: {', '.join(metrics.exposed_emails[:3])}...",
-                recommendation="Ascundeți email-urile sau folosiți formulare de contact pentru a evita spam-ul.",
+                title=exposed_emails_title,
+                description=exposed_emails_desc,
+                recommendation=exposed_emails_rec,
                 estimated_hours=1.0,
                 complexity="simple"
             ))

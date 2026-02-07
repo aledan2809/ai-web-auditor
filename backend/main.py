@@ -137,7 +137,8 @@ async def start_audit(
         str(request.url),
         [t.value for t in request.audit_types],
         request.include_screenshots,
-        request.mobile_test
+        request.mobile_test,
+        request.lang
     )
 
     return AuditResponse(
@@ -283,6 +284,7 @@ async def get_audit(
 @app.get("/api/audit/{audit_id}/pdf")
 async def download_audit_pdf(
     audit_id: str,
+    lang: str = Query("ro", description="Language: 'ro' or 'en'"),
     db: AsyncSession = Depends(get_db)
 ):
     """Download audit report as PDF"""
@@ -290,17 +292,17 @@ async def download_audit_pdf(
     audit = await audit_repo.get_by_id(audit_id)
 
     if not audit:
-        raise HTTPException(status_code=404, detail="Audit negasit")
+        raise HTTPException(status_code=404, detail="Audit not found" if lang == "en" else "Audit negasit")
 
     if audit.status != "completed":
-        raise HTTPException(status_code=400, detail="Auditul nu este finalizat")
+        raise HTTPException(status_code=400, detail="Audit not completed" if lang == "en" else "Auditul nu este finalizat")
 
     # Generate PDF
     from reports.generator import generate_pdf_report
 
     # Convert to AuditResult for PDF generator
     audit_result = await get_audit(audit_id, db)
-    pdf_path = await generate_pdf_report(audit_result)
+    pdf_path = await generate_pdf_report(audit_result, lang)
 
     return FileResponse(
         pdf_path,
@@ -418,7 +420,8 @@ async def rerun_audit(
         old_audit.url,
         old_audit.audit_types or ["full"],
         True,  # include_screenshots
-        True   # mobile_test
+        True,  # mobile_test
+        "ro"   # lang
     )
 
     return AuditResponse(
@@ -492,7 +495,8 @@ async def run_audit(
     url: str,
     audit_types: list,
     include_screenshots: bool,
-    mobile_test: bool
+    mobile_test: bool,
+    lang: str = "ro"
 ):
     """Run the actual audit in background"""
     from database.connection import async_session
@@ -518,7 +522,7 @@ async def run_audit(
             # Run selected audits
             if "full" in audit_types or "performance" in audit_types:
                 perf_auditor = PerformanceAuditor()
-                perf_result = await perf_auditor.audit(url, mobile_test)
+                perf_result = await perf_auditor.audit(url, mobile_test, lang)
                 scores["performance"] = perf_result.score
 
                 # Save metrics
@@ -547,7 +551,7 @@ async def run_audit(
 
             if "full" in audit_types or "seo" in audit_types:
                 seo_auditor = SEOAuditor()
-                seo_result = await seo_auditor.audit(url)
+                seo_result = await seo_auditor.audit(url, lang)
                 scores["seo"] = seo_result.score
 
                 await audit_repo.add_seo_metrics(audit_id, {
@@ -580,7 +584,7 @@ async def run_audit(
 
             if "full" in audit_types or "security" in audit_types:
                 sec_auditor = SecurityAuditor()
-                sec_result = await sec_auditor.audit(url)
+                sec_result = await sec_auditor.audit(url, lang)
                 scores["security"] = sec_result.score
 
                 await audit_repo.add_security_metrics(audit_id, {
@@ -612,7 +616,7 @@ async def run_audit(
 
             if "full" in audit_types or "gdpr" in audit_types:
                 gdpr_auditor = GDPRAuditor()
-                gdpr_result = await gdpr_auditor.audit(url)
+                gdpr_result = await gdpr_auditor.audit(url, lang)
                 scores["gdpr"] = gdpr_result.score
 
                 await audit_repo.add_gdpr_metrics(audit_id, {
@@ -641,7 +645,7 @@ async def run_audit(
 
             if "full" in audit_types or "accessibility" in audit_types:
                 a11y_auditor = AccessibilityAuditor()
-                a11y_result = await a11y_auditor.audit(url)
+                a11y_result = await a11y_auditor.audit(url, lang)
                 scores["accessibility"] = a11y_result.score
 
                 await audit_repo.add_accessibility_metrics(audit_id, {

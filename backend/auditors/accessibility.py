@@ -12,6 +12,7 @@ import re
 from models.schemas import (
     AccessibilityMetrics, AuditIssue, AuditType, Severity
 )
+from translations import t
 
 
 @dataclass
@@ -27,7 +28,7 @@ class AccessibilityAuditor:
     def __init__(self):
         pass
 
-    async def audit(self, url: str) -> AccessibilityResult:
+    async def audit(self, url: str, lang: str = "ro") -> AccessibilityResult:
         """Run accessibility audit"""
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
             response = await client.get(url)
@@ -62,7 +63,7 @@ class AccessibilityAuditor:
 
             # Generate issues
             issues = self._generate_issues(
-                metrics, url, soup, heading_issues, lang_attr, skip_links
+                metrics, url, soup, heading_issues, lang_attr, skip_links, lang
             )
 
             # Calculate score
@@ -290,33 +291,40 @@ class AccessibilityAuditor:
         soup: BeautifulSoup,
         heading_issues: List[str],
         has_lang: bool,
-        has_skip: bool
+        has_skip: bool,
+        lang: str = "ro"
     ) -> List[AuditIssue]:
         """Generate accessibility issues"""
         issues = []
 
         # Missing alt texts
         if metrics.missing_alt_texts > 0:
+            alt_title = f"{metrics.missing_alt_texts} images without alternative text" if lang == "en" else f"{metrics.missing_alt_texts} imagini fara text alternativ"
+            alt_desc = "Images without alt attribute are not accessible to screen readers." if lang == "en" else "Imaginile fara atribut alt nu sunt accesibile pentru screen readers."
+            alt_rec = "Add descriptive alt text for all informative images. Use alt=\"\" for decorative images." if lang == "en" else "Adaugati text alt descriptiv pentru toate imaginile informative. Folositi alt=\"\" pentru imagini decorative."
             issues.append(AuditIssue(
                 id=f"a11y_missing_alt_{hash(url)}",
                 category=AuditType.ACCESSIBILITY,
                 severity=Severity.HIGH,
-                title=f"{metrics.missing_alt_texts} imagini fără text alternativ",
-                description="Imaginile fără atribut alt nu sunt accesibile pentru screen readers.",
-                recommendation="Adăugați text alt descriptiv pentru toate imaginile informative. Folosiți alt=\"\" pentru imagini decorative.",
+                title=alt_title,
+                description=alt_desc,
+                recommendation=alt_rec,
                 estimated_hours=metrics.missing_alt_texts * 0.1,
                 complexity="simple"
             ))
 
         # Missing form labels
         if metrics.missing_form_labels > 0:
+            labels_title = f"{metrics.missing_form_labels} form fields without labels" if lang == "en" else f"{metrics.missing_form_labels} campuri de formular fara label"
+            labels_desc = "Fields without labels are not accessible for screen reader users." if lang == "en" else "Campurile fara label nu sunt accesibile pentru utilizatorii de screen reader."
+            labels_rec = "Add <label> elements associated with each input using the 'for' attribute." if lang == "en" else "Adaugati elemente <label> asociate cu fiecare input folosind atributul 'for'."
             issues.append(AuditIssue(
                 id=f"a11y_missing_labels_{hash(url)}",
                 category=AuditType.ACCESSIBILITY,
                 severity=Severity.HIGH,
-                title=f"{metrics.missing_form_labels} câmpuri de formular fără label",
-                description="Câmpurile fără label nu sunt accesibile pentru utilizatorii de screen reader.",
-                recommendation="Adăugați elemente <label> asociate cu fiecare input folosind atributul 'for'.",
+                title=labels_title,
+                description=labels_desc,
+                recommendation=labels_rec,
                 estimated_hours=metrics.missing_form_labels * 0.2,
                 complexity="simple"
             ))
@@ -324,13 +332,16 @@ class AccessibilityAuditor:
         # Heading hierarchy
         for issue in heading_issues:
             severity = Severity.HIGH if "Missing H1" in issue else Severity.MEDIUM
+            heading_title = f"Heading hierarchy issue: {issue}" if lang == "en" else f"Problema ierarhie heading-uri: {issue}"
+            heading_desc = "Heading hierarchy must be logical and without skips." if lang == "en" else "Ierarhia de heading-uri trebuie sa fie logica si fara salturi."
+            heading_rec = "Restructure headings to follow a logical hierarchy (H1 > H2 > H3)." if lang == "en" else "Restructurati heading-urile pentru a urma o ierarhie logica (H1 > H2 > H3)."
             issues.append(AuditIssue(
                 id=f"a11y_heading_{hash(url)}_{hash(issue)}",
                 category=AuditType.ACCESSIBILITY,
                 severity=severity,
-                title=f"Problemă ierarhie heading-uri: {issue}",
-                description="Ierarhia de heading-uri trebuie să fie logică și fără salturi.",
-                recommendation="Restructurați heading-urile pentru a urma o ierarhie logică (H1 > H2 > H3).",
+                title=heading_title,
+                description=heading_desc,
+                recommendation=heading_rec,
                 estimated_hours=1.0,
                 complexity="simple"
             ))
@@ -341,9 +352,9 @@ class AccessibilityAuditor:
                 id=f"a11y_no_lang_{hash(url)}",
                 category=AuditType.ACCESSIBILITY,
                 severity=Severity.HIGH,
-                title="Lipsește atributul lang pe <html>",
-                description="Screen reader-ele nu pot determina limba paginii.",
-                recommendation="Adăugați lang=\"ro\" (sau limba corespunzătoare) pe elementul <html>.",
+                title=t("a11y_no_lang", lang),
+                description=t("a11y_no_lang_desc", lang),
+                recommendation=t("a11y_no_lang_rec", lang),
                 estimated_hours=0.25,
                 complexity="simple"
             ))
@@ -354,48 +365,57 @@ class AccessibilityAuditor:
                 id=f"a11y_no_skip_{hash(url)}",
                 category=AuditType.ACCESSIBILITY,
                 severity=Severity.MEDIUM,
-                title="Lipsesc link-urile skip navigation",
-                description="Utilizatorii de tastatură nu pot sări peste navigație.",
-                recommendation="Adăugați un link 'Skip to main content' la începutul paginii.",
+                title=t("a11y_no_skip_link", lang),
+                description=t("a11y_no_skip_link_desc", lang),
+                recommendation=t("a11y_no_skip_link_rec", lang),
                 estimated_hours=1.0,
                 complexity="simple"
             ))
 
         # Keyboard navigation
         if not metrics.keyboard_navigation:
+            keyboard_title = "Limited keyboard navigation" if lang == "en" else "Navigare prin tastatura limitata"
+            keyboard_desc = "Interactive elements may not be accessible via keyboard." if lang == "en" else "Elementele interactive pot sa nu fie accesibile prin tastatura."
+            keyboard_rec = "Ensure all interactive elements have visible focus and are accessible via Tab." if lang == "en" else "Asigurati-va ca toate elementele interactive au focus visible si sunt accesibile prin Tab."
             issues.append(AuditIssue(
                 id=f"a11y_keyboard_{hash(url)}",
                 category=AuditType.ACCESSIBILITY,
                 severity=Severity.HIGH,
-                title="Navigare prin tastatură limitată",
-                description="Elementele interactive pot să nu fie accesibile prin tastatură.",
-                recommendation="Asigurați-vă că toate elementele interactive au focus visible și sunt accesibile prin Tab.",
+                title=keyboard_title,
+                description=keyboard_desc,
+                recommendation=keyboard_rec,
                 estimated_hours=4.0,
                 complexity="medium"
             ))
 
         # Color contrast
         if metrics.color_contrast_issues > 0:
+            contrast_title = f"Possible contrast issues ({metrics.color_contrast_issues})" if lang == "en" else f"Posibile probleme de contrast ({metrics.color_contrast_issues})"
+            contrast_desc = "Text with insufficient contrast may be hard to read." if lang == "en" else "Text cu contrast insuficient poate fi greu de citit."
+            contrast_rec = "Check color contrast using a tool like WebAIM Contrast Checker. Minimum recommended ratio: 4.5:1." if lang == "en" else "Verificati contrastul culorilor folosind un tool precum WebAIM Contrast Checker. Raportul minim recomandat: 4.5:1."
             issues.append(AuditIssue(
                 id=f"a11y_contrast_{hash(url)}",
                 category=AuditType.ACCESSIBILITY,
                 severity=Severity.MEDIUM,
-                title=f"Posibile probleme de contrast ({metrics.color_contrast_issues})",
-                description="Text cu contrast insuficient poate fi greu de citit.",
-                recommendation="Verificați contrastul culorilor folosind un tool precum WebAIM Contrast Checker. Raportul minim recomandat: 4.5:1.",
+                title=contrast_title,
+                description=contrast_desc,
+                recommendation=contrast_rec,
                 estimated_hours=2.0,
                 complexity="medium"
             ))
 
         # WCAG level
         if metrics.wcag_level == "Non-compliant":
+            wcag_title = "Site not WCAG 2.1 Level A compliant" if lang == "en" else "Site-ul nu este conform WCAG 2.1 Level A"
+            wcag_desc = "Site does not meet minimum accessibility requirements." if lang == "en" else "Site-ul nu indeplineste cerintele minime de accesibilitate."
+            wcag_rec = "Prioritize resolving critical issues to achieve WCAG 2.1 Level A compliance." if lang == "en" else "Prioritizati rezolvarea problemelor critice pentru a atinge conformitatea WCAG 2.1 Level A."
             issues.append(AuditIssue(
                 id=f"a11y_wcag_{hash(url)}",
                 category=AuditType.ACCESSIBILITY,
                 severity=Severity.CRITICAL,
-                title="Site-ul nu este conform WCAG 2.1 Level A",
-                description="Site-ul nu îndeplinește cerințele minime de accesibilitate.",
-                recommendation="Prioritizați rezolvarea problemelor critice pentru a atinge conformitatea WCAG 2.1 Level A.",
+                title=wcag_title,
+                description=wcag_desc,
+                recommendation=wcag_rec,
                 estimated_hours=20.0,
                 complexity="complex"
             ))

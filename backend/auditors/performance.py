@@ -13,6 +13,7 @@ import json
 from models.schemas import (
     PerformanceMetrics, AuditIssue, AuditType, Severity
 )
+from translations import t
 
 
 @dataclass
@@ -36,7 +37,7 @@ class PerformanceAuditor:
             'tbt': {'good': 200, 'poor': 600},   # milliseconds
         }
 
-    async def audit(self, url: str, mobile: bool = True) -> PerformanceResult:
+    async def audit(self, url: str, mobile: bool = True, lang: str = "ro") -> PerformanceResult:
         """Run performance audit on URL"""
         issues = []
 
@@ -51,7 +52,7 @@ class PerformanceAuditor:
         score = self._calculate_score(metrics)
 
         # Generate issues based on metrics
-        issues = self._generate_issues(metrics, url)
+        issues = self._generate_issues(metrics, url, lang)
 
         return PerformanceResult(
             score=score,
@@ -197,7 +198,7 @@ class PerformanceAuditor:
 
         return int(sum(scores) / len(scores))
 
-    def _generate_issues(self, metrics: PerformanceMetrics, url: str) -> List[AuditIssue]:
+    def _generate_issues(self, metrics: PerformanceMetrics, url: str, lang: str = "ro") -> List[AuditIssue]:
         """Generate issues based on performance metrics"""
         issues = []
 
@@ -208,9 +209,9 @@ class PerformanceAuditor:
                 id=f"perf_lcp_{hash(url)}",
                 category=AuditType.PERFORMANCE,
                 severity=severity,
-                title="Largest Contentful Paint (LCP) prea mare",
-                description=f"LCP actual: {metrics.lcp:.2f}s. Recomandat: sub {self.thresholds['lcp']['good']}s",
-                recommendation="Optimizați imaginile hero, folosiți lazy loading, CDN, și preload pentru resurse critice.",
+                title=t("perf_lcp_slow", lang),
+                description=t("perf_lcp_slow_desc", lang, f"{metrics.lcp:.2f}"),
+                recommendation=t("perf_lcp_slow_rec", lang),
                 estimated_hours=4.0 if severity == Severity.CRITICAL else 2.0,
                 complexity="complex" if severity == Severity.CRITICAL else "medium"
             ))
@@ -222,9 +223,9 @@ class PerformanceAuditor:
                 id=f"perf_cls_{hash(url)}",
                 category=AuditType.PERFORMANCE,
                 severity=severity,
-                title="Cumulative Layout Shift (CLS) prea mare",
-                description=f"CLS actual: {metrics.cls:.3f}. Recomandat: sub {self.thresholds['cls']['good']}",
-                recommendation="Adăugați dimensiuni explicite (width/height) pentru imagini și iframe-uri. Evitați inserarea dinamică de conținut.",
+                title=t("perf_cls_high", lang),
+                description=t("perf_cls_high_desc", lang, f"{metrics.cls:.3f}"),
+                recommendation=t("perf_cls_high_rec", lang),
                 estimated_hours=3.0,
                 complexity="medium"
             ))
@@ -236,9 +237,9 @@ class PerformanceAuditor:
                 id=f"perf_ttfb_{hash(url)}",
                 category=AuditType.PERFORMANCE,
                 severity=severity,
-                title="Time to First Byte (TTFB) prea mare",
-                description=f"TTFB actual: {metrics.ttfb:.0f}ms. Recomandat: sub {self.thresholds['ttfb']['good']}ms",
-                recommendation="Optimizați server-side rendering, folosiți caching, CDN, și bază de date optimizată.",
+                title=t("perf_ttfb_slow", lang),
+                description=t("perf_ttfb_slow_desc", lang, f"{metrics.ttfb:.0f}"),
+                recommendation=t("perf_ttfb_slow_rec", lang),
                 estimated_hours=6.0,
                 complexity="complex"
             ))
@@ -249,9 +250,9 @@ class PerformanceAuditor:
                 id=f"perf_fcp_{hash(url)}",
                 category=AuditType.PERFORMANCE,
                 severity=Severity.MEDIUM,
-                title="First Contentful Paint (FCP) lent",
-                description=f"FCP actual: {metrics.first_contentful_paint:.2f}s. Recomandat: sub {self.thresholds['fcp']['good']}s",
-                recommendation="Eliminați resursele care blochează randarea, minimizați CSS critic, și folosiți font-display: swap.",
+                title=t("perf_fcp_slow", lang),
+                description=t("perf_fcp_slow_desc", lang, f"{metrics.first_contentful_paint:.2f}"),
+                recommendation=t("perf_fcp_slow_rec", lang),
                 estimated_hours=2.0,
                 complexity="medium"
             ))

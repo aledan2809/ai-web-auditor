@@ -13,6 +13,7 @@ from urllib.parse import urljoin, urlparse
 from models.schemas import (
     SEOMetrics, AuditIssue, AuditType, Severity
 )
+from translations import t
 
 
 @dataclass
@@ -29,7 +30,7 @@ class SEOAuditor:
         self.ideal_title_length = (50, 60)
         self.ideal_description_length = (150, 160)
 
-    async def audit(self, url: str) -> SEOResult:
+    async def audit(self, url: str, lang: str = "ro") -> SEOResult:
         """Run SEO audit on URL"""
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
             # Fetch main page
@@ -71,7 +72,7 @@ class SEOAuditor:
             )
 
             # Generate issues
-            issues = self._generate_issues(metrics, url)
+            issues = self._generate_issues(metrics, url, lang)
 
             # Calculate score
             score = self._calculate_score(metrics)
@@ -222,7 +223,7 @@ class SEOAuditor:
 
         return max(0, score)
 
-    def _generate_issues(self, metrics: SEOMetrics, url: str) -> List[AuditIssue]:
+    def _generate_issues(self, metrics: SEOMetrics, url: str, lang: str = "ro") -> List[AuditIssue]:
         """Generate SEO issues"""
         issues = []
 
@@ -232,9 +233,9 @@ class SEOAuditor:
                 id=f"seo_no_title_{hash(url)}",
                 category=AuditType.SEO,
                 severity=Severity.CRITICAL,
-                title="Lipsește tag-ul title",
-                description="Pagina nu are un tag <title> definit.",
-                recommendation="Adăugați un title unic și descriptiv de 50-60 caractere care include cuvântul cheie principal.",
+                title=t("seo_no_title", lang),
+                description=t("seo_no_title_desc", lang),
+                recommendation=t("seo_no_title_rec", lang),
                 estimated_hours=0.5,
                 complexity="simple"
             ))
@@ -243,9 +244,9 @@ class SEOAuditor:
                 id=f"seo_short_title_{hash(url)}",
                 category=AuditType.SEO,
                 severity=Severity.MEDIUM,
-                title="Title prea scurt",
-                description=f"Title-ul are {metrics.title_length} caractere. Recomandat: {self.ideal_title_length[0]}-{self.ideal_title_length[1]}",
-                recommendation="Extindeți title-ul pentru a include mai multe cuvinte cheie relevante.",
+                title=t("seo_short_title", lang),
+                description=t("seo_short_title_desc", lang, metrics.title_length, self.ideal_title_length[0], self.ideal_title_length[1]),
+                recommendation=t("seo_short_title_rec", lang),
                 estimated_hours=0.5,
                 complexity="simple"
             ))
@@ -254,9 +255,9 @@ class SEOAuditor:
                 id=f"seo_long_title_{hash(url)}",
                 category=AuditType.SEO,
                 severity=Severity.LOW,
-                title="Title prea lung",
-                description=f"Title-ul are {metrics.title_length} caractere și va fi trunchiat în SERP.",
-                recommendation="Scurtați title-ul la maxim 60 caractere.",
+                title=t("seo_long_title", lang),
+                description=t("seo_long_title_desc", lang, metrics.title_length),
+                recommendation=t("seo_long_title_rec", lang),
                 estimated_hours=0.5,
                 complexity="simple"
             ))
@@ -267,9 +268,9 @@ class SEOAuditor:
                 id=f"seo_no_meta_{hash(url)}",
                 category=AuditType.SEO,
                 severity=Severity.HIGH,
-                title="Lipsește meta description",
-                description="Pagina nu are meta description definit.",
-                recommendation="Adăugați o meta description de 150-160 caractere care descrie conținutul paginii.",
+                title=t("seo_no_meta", lang),
+                description=t("seo_no_meta_desc", lang),
+                recommendation=t("seo_no_meta_rec", lang),
                 estimated_hours=0.5,
                 complexity="simple"
             ))
@@ -280,9 +281,9 @@ class SEOAuditor:
                 id=f"seo_no_h1_{hash(url)}",
                 category=AuditType.SEO,
                 severity=Severity.HIGH,
-                title="Lipsește tag-ul H1",
-                description="Pagina nu are un heading H1.",
-                recommendation="Adăugați un singur H1 care conține cuvântul cheie principal.",
+                title=t("seo_no_h1", lang),
+                description=t("seo_no_h1_desc", lang),
+                recommendation=t("seo_no_h1_rec", lang),
                 estimated_hours=0.5,
                 complexity="simple"
             ))
@@ -291,9 +292,9 @@ class SEOAuditor:
                 id=f"seo_multiple_h1_{hash(url)}",
                 category=AuditType.SEO,
                 severity=Severity.MEDIUM,
-                title="Multiple tag-uri H1",
-                description=f"Pagina are {metrics.h1_count} tag-uri H1. Recomandat: doar unul.",
-                recommendation="Păstrați un singur H1 și convertiți restul în H2 sau H3.",
+                title=t("seo_multiple_h1", lang),
+                description=t("seo_multiple_h1_desc", lang, metrics.h1_count),
+                recommendation=t("seo_multiple_h1_rec", lang),
                 estimated_hours=1.0,
                 complexity="simple"
             ))
@@ -304,9 +305,9 @@ class SEOAuditor:
                 id=f"seo_no_robots_{hash(url)}",
                 category=AuditType.SEO,
                 severity=Severity.MEDIUM,
-                title="Lipsește robots.txt",
-                description="Site-ul nu are fișier robots.txt.",
-                recommendation="Creați un fișier robots.txt pentru a ghida crawlerele.",
+                title=t("seo_no_robots", lang),
+                description=t("seo_no_robots_desc", lang),
+                recommendation=t("seo_no_robots_rec", lang),
                 estimated_hours=1.0,
                 complexity="simple"
             ))
@@ -316,9 +317,9 @@ class SEOAuditor:
                 id=f"seo_no_sitemap_{hash(url)}",
                 category=AuditType.SEO,
                 severity=Severity.HIGH,
-                title="Lipsește sitemap.xml",
-                description="Site-ul nu are sitemap XML.",
-                recommendation="Generați și publicați un sitemap.xml pentru indexare optimă.",
+                title=t("seo_no_sitemap", lang),
+                description=t("seo_no_sitemap_desc", lang),
+                recommendation=t("seo_no_sitemap_rec", lang),
                 estimated_hours=2.0,
                 complexity="medium"
             ))
@@ -329,9 +330,9 @@ class SEOAuditor:
                 id=f"seo_broken_links_{hash(url)}",
                 category=AuditType.SEO,
                 severity=Severity.HIGH,
-                title=f"{len(metrics.broken_links)} link-uri broken găsite",
-                description=f"Link-uri cu eroare: {', '.join(metrics.broken_links[:5])}...",
-                recommendation="Corectați sau eliminați link-urile care returnează erori 4xx/5xx.",
+                title=t("seo_broken_links", lang, len(metrics.broken_links)),
+                description=t("seo_broken_links_desc", lang, ', '.join(metrics.broken_links[:5])),
+                recommendation=t("seo_broken_links_rec", lang),
                 estimated_hours=len(metrics.broken_links) * 0.25,
                 complexity="simple"
             ))
@@ -342,9 +343,9 @@ class SEOAuditor:
                 id=f"seo_missing_alt_{hash(url)}",
                 category=AuditType.SEO,
                 severity=Severity.MEDIUM,
-                title=f"{metrics.image_alt_missing} imagini fără atribut alt",
-                description="Imaginile fără alt text afectează SEO și accesibilitatea.",
-                recommendation="Adăugați text alt descriptiv pentru toate imaginile.",
+                title=t("seo_missing_alt", lang, metrics.image_alt_missing),
+                description=t("seo_missing_alt_desc", lang),
+                recommendation=t("seo_missing_alt_rec", lang),
                 estimated_hours=metrics.image_alt_missing * 0.1,
                 complexity="simple"
             ))
