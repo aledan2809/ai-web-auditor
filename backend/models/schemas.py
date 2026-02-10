@@ -152,6 +152,9 @@ class AuditResult(BaseModel):
     security_score: Optional[int]
     gdpr_score: Optional[int]
     accessibility_score: Optional[int]
+    mobile_ux_score: Optional[int] = None
+    trust_score: Optional[int] = None
+    competitor_score: Optional[int] = None
 
     # Detailed metrics
     performance: Optional[PerformanceMetrics]

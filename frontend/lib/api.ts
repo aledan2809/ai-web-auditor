@@ -51,6 +51,9 @@ export interface AuditResult {
   security_score?: number
   gdpr_score?: number
   accessibility_score?: number
+  mobile_ux_score?: number
+  trust_score?: number
+  competitor_score?: number
   issues: AuditIssue[]
   desktop_screenshot?: string
   mobile_screenshot?: string
@@ -66,6 +69,9 @@ export interface AuditListItem {
   security_score?: number
   gdpr_score?: number
   accessibility_score?: number
+  mobile_ux_score?: number
+  trust_score?: number
+  competitor_score?: number
   issues_count: number
   created_at: string
   completed_at?: string
@@ -207,6 +213,9 @@ export const websiteGuruApi = {
         security_score: audit.security_score,
         gdpr_score: audit.gdpr_score,
         accessibility_score: audit.accessibility_score,
+        mobile_ux_score: audit.mobile_ux_score,
+        trust_score: audit.trust_score,
+        competitor_score: audit.competitor_score,
         issues: audit.issues.map(issue => ({
           category: issue.category,
           severity: issue.severity,

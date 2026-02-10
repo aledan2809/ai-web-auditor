@@ -4,9 +4,9 @@ Endpoints consumed by the AVE landing page (techbiz.ae/ave/).
 Reference: API_CONTRACTS_AUDITOR_v1.md
 """
 
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime, timezone
@@ -19,8 +19,9 @@ from services.scoring import (
     ComponentId, from_legacy_scores, compute_overall_score,
     overall_result_to_dict, score_status,
 )
+from auth.utils import generate_guru_token, verify_guru_token
 
-router = APIRouter(prefix="/api/audit", tags=["ave-landing"])
+router = APIRouter(prefix="/api/ave", tags=["ave-landing"])
 
 
 # ── Schemas ──────────────────────────────────────────────────────────
@@ -164,7 +165,7 @@ async def ave_start_audit(
 
     return {
         "auditId": audit.id,
-        "teaserUrl": f"/audit/{audit.id}/teaser",
+        "teaserUrl": f"/api/ave/{audit.id}/teaser",
         "pricing": {
             "isCampaign": pricing["isCampaign"],
             "freeComponents": 3,
@@ -312,7 +313,7 @@ async def ave_unlock(
     return {
         "auditId": audit_id,
         "leadId": lead_id,
-        "fullReportUrl": f"/audit/{audit_id}/full",
+        "fullReportUrl": f"/api/ave/{audit_id}/full",
         "pdfUrl": f"/api/reports/pdf?auditId={audit_id}",
         "emailSent": email_sent,
         "catalogVersion": "v1",
@@ -399,12 +400,102 @@ async def ave_get_full_report(
             "quickWinsBundleAED": pricing["quickWinsPriceAED"],
             "monitorTier1MonthlyAED": pricing["monitorMonthlyAED"],
         },
+        "guruFixPackUrl": _build_guru_url(audit_id),
         "catalogVersion": "v1",
         "reportContractVersion": "v1",
         "issueLibraryVersion": "v1",
         "generatedAt": datetime.now(timezone.utc).isoformat(),
     }
 
+
+def _build_guru_url(audit_id: str) -> str:
+    """Generate the Guru Fix Pack CTA link with signed token."""
+    import os
+    guru_base = os.getenv("GURU_BASE_URL", "https://website-guru.vercel.app")
+    token = generate_guru_token(audit_id)
+    return f"{guru_base}/start?auditId={audit_id}&token={token}"
+
+
+@router.get("/{audit_id}/summary")
+async def ave_get_summary(
+    audit_id: str,
+    token: str = Query(..., description="HMAC-SHA256 token for Guru"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Audit summary consumed by Website Guru.
+    Auth: HMAC-SHA256 token (shared secret between AVE and Guru).
+    Returns scores + top 20 issues for the Fix Pack workflow.
+    """
+    if not verify_guru_token(token, audit_id):
+        raise HTTPException(status_code=401, detail="INVALID_TOKEN")
+
+    result = await db.execute(select(Audit).where(Audit.id == audit_id))
+    audit = result.scalar_one_or_none()
+    if not audit:
+        raise HTTPException(status_code=404, detail="Audit not found")
+
+    if audit.status not in ("completed", "done"):
+        raise HTTPException(status_code=409, detail="AUDIT_NOT_COMPLETE")
+
+    # Get all issues sorted by severity
+    from database.models import AuditIssue
+    issues_result = await db.execute(
+        select(AuditIssue)
+        .where(AuditIssue.audit_id == audit_id)
+        .order_by(AuditIssue.severity)
+        .limit(20)
+    )
+    issues = issues_result.scalars().all()
+
+    # Count issues by severity
+    count_result = await db.execute(
+        select(AuditIssue).where(AuditIssue.audit_id == audit_id)
+    )
+    all_issues = count_result.scalars().all()
+    severity_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
+    for iss in all_issues:
+        sev = (iss.severity or "medium").lower()
+        if sev in severity_counts:
+            severity_counts[sev] += 1
+
+    return {
+        "auditId": audit_id,
+        "websiteUrl": audit.url,
+        "overallScore": audit.performance_score,  # placeholder — use weighted
+        "scores": {
+            "performance": audit.performance_score,
+            "seo": audit.seo_score,
+            "security": audit.security_score,
+            "gdpr": audit.gdpr_score,
+            "accessibility": audit.accessibility_score,
+            "mobileUx": getattr(audit, "mobile_ux_score", None),
+            "trust": getattr(audit, "trust_score", None),
+        },
+        "totalIssues": len(all_issues),
+        "issuesBySeverity": severity_counts,
+        "topIssues": [
+            {
+                "id": iss.id,
+                "category": iss.category,
+                "severity": (iss.severity or "medium").lower(),
+                "title": iss.title,
+                "description": iss.description,
+                "recommendation": iss.recommendation,
+                "estimatedHours": iss.estimated_hours,
+                "complexity": iss.complexity or "medium",
+            }
+            for iss in issues
+        ],
+        "completedAt": (
+            audit.completed_at.isoformat()
+            if getattr(audit, "completed_at", None)
+            else None
+        ),
+    }
+
+
+# ── Helpers ──────────────────────────────────────────────────────────
 
 def _severity_order(severity: str) -> int:
     return {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}.get(

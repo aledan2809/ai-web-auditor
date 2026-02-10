@@ -4,10 +4,49 @@ Authentication utilities
 
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
+import hashlib
+import hmac
+import os
+import time
 import bcrypt
 from jose import jwt, JWTError
 
 from .config import auth_settings
+
+# ── Guru HMAC Token helpers ──────────────────────────────────────────
+
+GURU_SHARED_SECRET = os.getenv("GURU_SHARED_SECRET", "")
+GURU_TOKEN_TTL = 86400  # 24 hours
+
+
+def generate_guru_token(audit_id: str) -> str:
+    """Generate an HMAC-SHA256 token for Guru to fetch audit summary.
+    Format: <hex_signature>|<expiry_unix_ts>
+    """
+    expiry = int(time.time()) + GURU_TOKEN_TTL
+    message = f"{audit_id}:{expiry}"
+    sig = hmac.new(
+        GURU_SHARED_SECRET.encode(), message.encode(), hashlib.sha256
+    ).hexdigest()
+    return f"{sig}|{expiry}"
+
+
+def verify_guru_token(token: str, audit_id: str) -> bool:
+    """Verify an HMAC-SHA256 token sent by Guru."""
+    if not GURU_SHARED_SECRET:
+        return False
+    try:
+        sig_hex, expiry_str = token.split("|", 1)
+        expiry = int(expiry_str)
+    except (ValueError, AttributeError):
+        return False
+    if time.time() > expiry:
+        return False
+    expected_msg = f"{audit_id}:{expiry}"
+    expected_sig = hmac.new(
+        GURU_SHARED_SECRET.encode(), expected_msg.encode(), hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(sig_hex, expected_sig)
 
 
 def hash_password(password: str) -> str:

@@ -20,8 +20,11 @@ const categoryLabels: Record<string, string> = {
   performance: 'Performance',
   seo: 'SEO',
   security: 'Security',
-  gdpr: 'GDPR',
+  gdpr: 'Privacy',
   accessibility: 'Accessibility',
+  ui_ux: 'Mobile UX',
+  trust: 'Trust',
+  full: 'Competitor',
 }
 
 function ScoreCircle({ score, label }: { score: number | null | undefined; label: string }) {
@@ -189,13 +192,16 @@ export default function AuditPage() {
 
         {/* Scores Grid */}
         {audit.status === 'completed' && (
-          <div className="grid grid-cols-6 gap-4 pt-4 border-t">
+          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-4 pt-4 border-t">
             <ScoreCircle score={audit.overall_score} label="Overall" />
             <ScoreCircle score={audit.performance_score} label="Performance" />
             <ScoreCircle score={audit.seo_score} label="SEO" />
             <ScoreCircle score={audit.security_score} label="Security" />
-            <ScoreCircle score={audit.gdpr_score} label="GDPR" />
+            <ScoreCircle score={audit.gdpr_score} label="Privacy" />
             <ScoreCircle score={audit.accessibility_score} label="A11y" />
+            <ScoreCircle score={audit.mobile_ux_score} label="Mobile UX" />
+            <ScoreCircle score={audit.trust_score} label="Trust" />
+            <ScoreCircle score={audit.competitor_score} label="Competitor" />
           </div>
         )}
       </div>
