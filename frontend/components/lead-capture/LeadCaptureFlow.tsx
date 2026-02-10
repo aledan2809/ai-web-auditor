@@ -340,7 +340,12 @@ export default function LeadCaptureFlow() {
               We need a few details to send your report
             </p>
           </div>
-          <EnrollmentForm onSubmit={handleEnrollmentSubmit} />
+          <EnrollmentForm
+            auditId={leadData.auditId}
+            packageId={leadData.selectedPackage}
+            packageName={PACKAGE_PRICES[leadData.selectedPackage]?.name || leadData.selectedPackage}
+            onSuccess={handleEnrollmentSubmit}
+          />
         </div>
       )}
 

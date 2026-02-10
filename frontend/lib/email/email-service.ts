@@ -62,6 +62,8 @@ const EMAIL_TEMPLATES = {
       greeting: 'Dear',
       intro: 'Please find attached your proforma invoice for the AI Web Auditor service.',
       paymentInfo: 'To complete your purchase, please make payment using the details below.',
+      dueDate: 'Due Date',
+      amount: 'Amount Due',
       questions: 'Once payment is received, you will receive your full audit report.',
       regards: 'Best regards,',
       team: 'AI Web Auditor Team'
@@ -95,6 +97,8 @@ const EMAIL_TEMPLATES = {
       greeting: 'Stimate/Stimata',
       intro: 'Gasesti atasat factura proforma pentru serviciul AI Web Auditor.',
       paymentInfo: 'Pentru a finaliza achizitia, te rugam sa efectuezi plata folosind detaliile de mai jos.',
+      dueDate: 'Scadenta',
+      amount: 'Suma de Plata',
       questions: 'Odata ce plata este primita, vei primi raportul complet de audit.',
       regards: 'Cu respect,',
       team: 'Echipa AI Web Auditor'
