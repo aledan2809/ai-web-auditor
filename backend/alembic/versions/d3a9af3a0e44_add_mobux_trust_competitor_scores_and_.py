@@ -45,15 +45,17 @@ def upgrade() -> None:
         with op.batch_alter_table('pricing_config', schema=None) as batch_op:
             batch_op.create_index(batch_op.f('ix_pricing_config_market'), ['market'], unique=False)
 
-    # Add new columns to audits only if they don't exist
-    existing_columns = [c['name'] for c in inspector.get_columns('audits')]
-    with op.batch_alter_table('audits', schema=None) as batch_op:
-        if 'mobile_ux_score' not in existing_columns:
-            batch_op.add_column(sa.Column('mobile_ux_score', sa.Integer(), nullable=True))
-        if 'trust_score' not in existing_columns:
-            batch_op.add_column(sa.Column('trust_score', sa.Integer(), nullable=True))
-        if 'competitor_score' not in existing_columns:
-            batch_op.add_column(sa.Column('competitor_score', sa.Integer(), nullable=True))
+    # Add new columns to audits only if the table exists and columns are missing
+    # (If table doesn't exist, create_all() will create it with all columns)
+    if 'audits' in existing_tables:
+        existing_columns = [c['name'] for c in inspector.get_columns('audits')]
+        with op.batch_alter_table('audits', schema=None) as batch_op:
+            if 'mobile_ux_score' not in existing_columns:
+                batch_op.add_column(sa.Column('mobile_ux_score', sa.Integer(), nullable=True))
+            if 'trust_score' not in existing_columns:
+                batch_op.add_column(sa.Column('trust_score', sa.Integer(), nullable=True))
+            if 'competitor_score' not in existing_columns:
+                batch_op.add_column(sa.Column('competitor_score', sa.Integer(), nullable=True))
 
     # ### end Alembic commands ###
 
