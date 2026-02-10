@@ -180,7 +180,10 @@ class AuditRepository:
         seo_score: Optional[int] = None,
         security_score: Optional[int] = None,
         gdpr_score: Optional[int] = None,
-        accessibility_score: Optional[int] = None
+        accessibility_score: Optional[int] = None,
+        mobile_ux_score: Optional[int] = None,
+        trust_score: Optional[int] = None,
+        competitor_score: Optional[int] = None,
     ) -> Optional[Audit]:
         """Update audit scores"""
         audit = await self.get_by_id(audit_id, include_relations=False)
@@ -198,6 +201,12 @@ class AuditRepository:
             audit.gdpr_score = gdpr_score
         if accessibility_score is not None:
             audit.accessibility_score = accessibility_score
+        if mobile_ux_score is not None:
+            audit.mobile_ux_score = mobile_ux_score
+        if trust_score is not None:
+            audit.trust_score = trust_score
+        if competitor_score is not None:
+            audit.competitor_score = competitor_score
 
         await self.db.flush()
         return audit

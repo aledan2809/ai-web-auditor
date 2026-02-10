@@ -13,6 +13,7 @@ import json
 from database.connection import get_db
 from database.models import Package, Settings, CompanyDetails
 from auth.dependencies import require_admin
+from services.pricing import get_current_pricing, seed_default_pricing
 from pydantic import BaseModel
 
 
@@ -184,6 +185,20 @@ async def ensure_company_details(db: AsyncSession):
 
 
 # ============== PUBLIC ENDPOINTS ==============
+
+@router.get("/pricing/current")
+async def get_pricing(
+    market: str = "UAE",
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get current active pricing for a market (public).
+    Landing page calls this to display prices.
+    Reference: DEV_DECISIONS_v1.md §4, API_CONTRACTS_AUDITOR_v1.md
+    """
+    await seed_default_pricing(db)
+    return await get_current_pricing(db, market)
+
 
 @router.get("/packages", response_model=List[PackageConfig])
 async def get_packages(

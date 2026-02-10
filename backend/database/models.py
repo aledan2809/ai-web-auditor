@@ -56,6 +56,9 @@ class Audit(Base):
     security_score = Column(Integer, nullable=True)
     gdpr_score = Column(Integer, nullable=True)
     accessibility_score = Column(Integer, nullable=True)
+    mobile_ux_score = Column(Integer, nullable=True)
+    trust_score = Column(Integer, nullable=True)
+    competitor_score = Column(Integer, nullable=True)
 
     # Screenshots (base64 or URL)
     desktop_screenshot = Column(Text, nullable=True)
@@ -361,6 +364,34 @@ class AuditLog(Base):
     user_agent = Column(Text, nullable=True)
     details = Column(JSON, default=dict)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+# ============== PRICING CONFIG (AVE v1) ==============
+
+class PricingConfig(Base):
+    """Market-specific pricing configuration for AVE audits."""
+    __tablename__ = "pricing_config"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    market = Column(String(10), nullable=False, index=True, default="UAE")
+
+    # Standard prices (AED)
+    unlock_price = Column(Float, default=19.99)
+    quick_wins_price = Column(Float, default=199.0)
+    monitor_monthly = Column(Float, default=49.0)
+
+    # Campaign pricing (optional)
+    campaign_price = Column(Float, nullable=True)
+    campaign_ends_at = Column(DateTime, nullable=True)
+    campaign_label = Column(String(255), nullable=True)
+
+    # Normal prices (shown struck-through during campaign)
+    normal_unlock_price = Column(Float, default=99.99)
+    normal_full_price = Column(Float, default=399.0)
+
+    is_active = Column(Boolean, default=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by = Column(String(255), nullable=True)
 
 
 # ============== COMPETITOR MONITORING MODELS ==============

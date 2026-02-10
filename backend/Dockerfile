@@ -43,5 +43,5 @@ RUN mkdir -p data
 # Expose port (Railway will override with $PORT)
 EXPOSE 8001
 
-# Run the application - use PORT env var from Railway
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8001}
+# Run migrations then start the application
+CMD alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port ${PORT:-8001}

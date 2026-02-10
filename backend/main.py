@@ -46,6 +46,9 @@ from marketing.router import router as marketing_router
 # AI Agents
 from ai.agents.router import router as ai_agents_router
 
+# AVE Landing endpoints (teaser/unlock/full)
+from services.ave_router import router as ave_router
+
 # Schemas
 from models.schemas import (
     AuditRequest, AuditResponse, AuditResult, AuditStatus,
@@ -60,12 +63,21 @@ from models.schemas import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan - startup and shutdown"""
+    import asyncio
+
     # Startup
     print("Starting AI Web Auditor API...")
     await init_db()
     print("Database initialized")
+
+    # Start email scheduler in background
+    from services.email_scheduler import run_email_scheduler_loop
+    scheduler_task = asyncio.create_task(run_email_scheduler_loop())
+
     yield
+
     # Shutdown
+    scheduler_task.cancel()
     print("Shutting down...")
     await close_db()
 
@@ -87,6 +99,8 @@ app.add_middleware(
         "http://localhost:3001",
         "https://frontend-eosin-seven-27.vercel.app",
         "https://frontend-mbhvxomt4-alex-danciulescus-projects.vercel.app",
+        "https://www.techbiz.ae",
+        "https://techbiz.ae",
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -102,6 +116,7 @@ app.include_router(settings_router)
 app.include_router(competitors_router)
 app.include_router(marketing_router)
 app.include_router(ai_agents_router)
+app.include_router(ave_router)
 
 
 # ============== BASIC ENDPOINTS ==============
@@ -573,6 +588,8 @@ async def run_audit(
                 seo_auditor = SEOAuditor()
                 seo_result = await seo_auditor.audit(url, lang)
                 scores["seo"] = seo_result.score
+                scores["tseo"] = seo_result.tseo_score
+                scores["opseo"] = seo_result.opseo_score
 
                 await audit_repo.add_seo_metrics(audit_id, {
                     "score": seo_result.score,
@@ -691,15 +708,89 @@ async def run_audit(
                         "complexity": getattr(issue, 'complexity', 'medium')
                     })
 
+            # ── New v1 auditors: MOBUX, TRUST, COMP ──────────────────
+            if "full" in audit_types:
+                from auditors.mobile_ux import MobileUXAuditor
+                from auditors.trust import TrustAuditor
+                from auditors.competitor import CompetitorAuditor
+
+                # Mobile UX
+                try:
+                    mobux_auditor = MobileUXAuditor()
+                    mobux_result = await mobux_auditor.audit(url, lang)
+                    scores["mobile_ux"] = mobux_result.score
+                    for issue in mobux_result.issues:
+                        issues.append({
+                            "category": "ui_ux",
+                            "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
+                            "title": issue.title,
+                            "description": issue.description,
+                            "recommendation": issue.recommendation,
+                            "affected_element": getattr(issue, 'affected_element', None),
+                            "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
+                            "complexity": getattr(issue, 'complexity', 'medium')
+                        })
+                except Exception as e:
+                    print(f"Mobile UX audit error: {e}")
+
+                # Trust & Conversions
+                try:
+                    trust_auditor = TrustAuditor()
+                    trust_result = await trust_auditor.audit(url, lang)
+                    scores["trust"] = trust_result.score
+                    for issue in trust_result.issues:
+                        issues.append({
+                            "category": "ui_ux",
+                            "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
+                            "title": issue.title,
+                            "description": issue.description,
+                            "recommendation": issue.recommendation,
+                            "affected_element": getattr(issue, 'affected_element', None),
+                            "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
+                            "complexity": getattr(issue, 'complexity', 'medium')
+                        })
+                except Exception as e:
+                    print(f"Trust audit error: {e}")
+
+                # Competitor Gap (no competitor URL in v1 basic flow)
+                try:
+                    comp_auditor = CompetitorAuditor()
+                    comp_result = await comp_auditor.audit(url, competitor_url=None, lang=lang)
+                    scores["competitor"] = comp_result.score
+                    for issue in comp_result.issues:
+                        issues.append({
+                            "category": "full",
+                            "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
+                            "title": issue.title,
+                            "description": issue.description,
+                            "recommendation": issue.recommendation,
+                            "affected_element": getattr(issue, 'affected_element', None),
+                            "estimated_hours": getattr(issue, 'estimated_hours', 0),
+                            "complexity": getattr(issue, 'complexity', 'simple')
+                        })
+                except Exception as e:
+                    print(f"Competitor audit error: {e}")
+
             # Add all issues to database
             if issues:
                 await audit_repo.add_issues_bulk(audit_id, issues)
 
-            # Calculate overall score
-            if scores:
-                overall_score = int(sum(scores.values()) / len(scores))
-            else:
-                overall_score = 0
+            # Calculate overall score using weighted scoring engine
+            from services.scoring import from_legacy_scores, compute_overall_score
+            comp_scores = from_legacy_scores(
+                performance_score=scores.get("performance"),
+                seo_score=scores.get("seo"),
+                security_score=scores.get("security"),
+                gdpr_score=scores.get("gdpr"),
+                accessibility_score=scores.get("accessibility"),
+                mobile_ux_score=scores.get("mobile_ux"),
+                trust_score=scores.get("trust"),
+                competitor_score=scores.get("competitor"),
+                tseo_score=scores.get("tseo"),
+                opseo_score=scores.get("opseo"),
+            )
+            overall_result = compute_overall_score(comp_scores)
+            overall_score = overall_result.overall_score
 
             # Update scores
             await audit_repo.update_scores(
@@ -709,7 +800,10 @@ async def run_audit(
                 seo_score=scores.get("seo"),
                 security_score=scores.get("security"),
                 gdpr_score=scores.get("gdpr"),
-                accessibility_score=scores.get("accessibility")
+                accessibility_score=scores.get("accessibility"),
+                mobile_ux_score=scores.get("mobile_ux"),
+                trust_score=scores.get("trust"),
+                competitor_score=scores.get("competitor"),
             )
 
             # Take screenshots if requested
@@ -728,6 +822,24 @@ async def run_audit(
             # Mark as completed
             await audit_repo.update_status(audit_id, "completed", datetime.utcnow())
             await db.commit()
+
+            # Send "preview ready" email (non-blocking)
+            try:
+                from services.email_service import send_preview_ready, send_admin_new_audit
+                # Find email from audit logs
+                from database.models import AuditLog
+                from sqlalchemy import select as sel
+                log_result = await db.execute(
+                    sel(AuditLog.email)
+                    .where(AuditLog.entity_id == audit_id, AuditLog.email.isnot(None))
+                    .limit(1)
+                )
+                lead_email = log_result.scalar_one_or_none()
+                if lead_email:
+                    send_preview_ready(lead_email, url, audit_id, overall_score)
+                send_admin_new_audit(url, audit_id, lead_email)
+            except Exception as e:
+                print(f"Email notification error: {e}")
 
         except Exception as e:
             await audit_repo.update_status(audit_id, "failed")

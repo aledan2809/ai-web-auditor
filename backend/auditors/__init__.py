@@ -6,6 +6,9 @@ from .security import SecurityAuditor
 from .gdpr import GDPRAuditor
 from .accessibility import AccessibilityAuditor
 from .api_tester import APITester
+from .mobile_ux import MobileUXAuditor
+from .trust import TrustAuditor
+from .competitor import CompetitorAuditor
 
 __all__ = [
     'PerformanceAuditor',
@@ -13,5 +16,8 @@ __all__ = [
     'SecurityAuditor',
     'GDPRAuditor',
     'AccessibilityAuditor',
-    'APITester'
+    'APITester',
+    'MobileUXAuditor',
+    'TrustAuditor',
+    'CompetitorAuditor',
 ]

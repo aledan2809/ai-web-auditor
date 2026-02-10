@@ -21,6 +21,8 @@ class SEOResult:
     score: int
     metrics: SEOMetrics
     issues: List[AuditIssue]
+    tseo_score: int = 0   # Technical SEO score
+    opseo_score: int = 0  # On-Page SEO score
 
 
 class SEOAuditor:
@@ -74,11 +76,14 @@ class SEOAuditor:
             # Generate issues
             issues = self._generate_issues(metrics, url, lang)
 
-            # Calculate score
-            score = self._calculate_score(metrics)
+            # Calculate score (split into TSEO + OPSEO)
+            score, tseo_score, opseo_score = self._calculate_score(metrics)
             metrics.score = score
 
-            return SEOResult(score=score, metrics=metrics, issues=issues)
+            return SEOResult(
+                score=score, metrics=metrics, issues=issues,
+                tseo_score=tseo_score, opseo_score=opseo_score,
+            )
 
     def _get_title(self, soup: BeautifulSoup) -> Optional[str]:
         """Extract page title"""
@@ -174,54 +179,56 @@ class SEOAuditor:
 
         return broken
 
-    def _calculate_score(self, metrics: SEOMetrics) -> int:
-        """Calculate SEO score"""
-        score = 100
-
-        # Title checks (-15 max)
+    def _calculate_score(self, metrics: SEOMetrics) -> tuple:
+        """Calculate SEO scores: (overall, tseo, opseo)"""
+        # On-Page SEO score (OPSEO): title, meta desc, H1, images alt
+        opseo = 100
         if not metrics.title:
-            score -= 15
+            opseo -= 25
         elif metrics.title_length < self.ideal_title_length[0]:
-            score -= 5
+            opseo -= 10
         elif metrics.title_length > self.ideal_title_length[1]:
-            score -= 5
+            opseo -= 10
 
-        # Meta description checks (-15 max)
         if not metrics.meta_description:
-            score -= 15
+            opseo -= 25
         elif metrics.meta_description_length < self.ideal_description_length[0]:
-            score -= 5
+            opseo -= 10
         elif metrics.meta_description_length > self.ideal_description_length[1]:
-            score -= 5
+            opseo -= 10
 
-        # H1 checks (-10 max)
         if metrics.h1_count == 0:
-            score -= 10
+            opseo -= 20
         elif metrics.h1_count > 1:
-            score -= 5
+            opseo -= 10
 
-        # Technical SEO (-20 max)
+        if metrics.image_alt_missing > 0:
+            opseo -= min(15, metrics.image_alt_missing * 2)
+
+        opseo = max(0, opseo)
+
+        # Technical SEO score (TSEO): robots.txt, sitemap, canonical, broken links, structured data
+        tseo = 100
         if not metrics.robots_txt_exists:
-            score -= 5
+            tseo -= 15
         if not metrics.sitemap_exists:
-            score -= 10
+            tseo -= 25
         if not metrics.canonical_url:
-            score -= 5
+            tseo -= 15
 
-        # Broken links (-15 max)
         broken_count = len(metrics.broken_links)
         if broken_count > 0:
-            score -= min(15, broken_count * 3)
+            tseo -= min(25, broken_count * 5)
 
-        # Images without alt (-10 max)
-        if metrics.image_alt_missing > 0:
-            score -= min(10, metrics.image_alt_missing)
-
-        # Structured data bonus (+5)
         if metrics.structured_data:
-            score = min(100, score + 5)
+            tseo = min(100, tseo + 10)
 
-        return max(0, score)
+        tseo = max(0, tseo)
+
+        # Combined overall = weighted average (OPSEO 60%, TSEO 40%)
+        overall = round(opseo * 0.6 + tseo * 0.4)
+
+        return (overall, tseo, opseo)
 
     def _generate_issues(self, metrics: SEOMetrics, url: str, lang: str = "ro") -> List[AuditIssue]:
         """Generate SEO issues"""
