@@ -291,7 +291,8 @@ async def ave_unlock(
 ):
     """
     Unlock full report (lead capture with consent).
-    Stores lead, returns full report + PDF URLs.
+    First free audit per email; subsequent audits require payment.
+    Sends formal report email with PDF to client + admin notification.
     """
     result = await db.execute(select(Audit).where(Audit.id == audit_id))
     audit = result.scalar_one_or_none()
@@ -302,7 +303,17 @@ async def ave_unlock(
     if not request.consent.get("privacyAccepted"):
         raise HTTPException(status_code=400, detail="CONSENT_REQUIRED")
 
-    # Create lead record
+    # ── Check for repeat audit (same email already has a lead) ────────
+    existing_lead = await db.execute(
+        select(Lead).where(Lead.email == request.email).limit(1)
+    )
+    if existing_lead.scalar_one_or_none():
+        raise HTTPException(
+            status_code=402,
+            detail="PAYMENT_REQUIRED",
+        )
+
+    # ── Create lead record ────────────────────────────────────────────
     lead_id = _generate_id("lead")
     now = datetime.utcnow()  # naive UTC — matches DB column TIMESTAMP WITHOUT TIME ZONE
     ref = f"AVE-{now.strftime('%Y%m%d')}-{uuid.uuid4().hex[:4].upper()}"
@@ -332,20 +343,79 @@ async def ave_unlock(
     db.add(log)
     await db.commit()
 
-    # Send admin notification (non-blocking)
-    email_sent = False
+    # ── Generate PDF ──────────────────────────────────────────────────
+    pdf_bytes = None
+    try:
+        from reports.generator import generate_pdf_report
+        from main import get_audit
+        audit_result = await get_audit(audit_id, db)
+        pdf_path = await generate_pdf_report(audit_result, "en")
+        with open(pdf_path, "rb") as f:
+            pdf_bytes = f.read()
+        print(f"[UNLOCK] PDF generated: {len(pdf_bytes)} bytes")
+    except Exception as e:
+        print(f"[UNLOCK] PDF generation failed (will send email without attachment): {e}")
+
+    # ── Build data for client email ───────────────────────────────────
+    comp_scores = from_legacy_scores(
+        performance_score=audit.performance_score,
+        seo_score=audit.seo_score,
+        security_score=audit.security_score,
+        gdpr_score=audit.gdpr_score,
+        accessibility_score=audit.accessibility_score,
+        mobile_ux_score=getattr(audit, 'mobile_ux_score', None),
+        trust_score=getattr(audit, 'trust_score', None),
+        competitor_score=getattr(audit, 'competitor_score', None),
+    )
+    overall = compute_overall_score(comp_scores)
+    overall_dict = overall_result_to_dict(overall)
+
+    from database.models import AuditIssue
+    issues_result = await db.execute(
+        select(AuditIssue).where(AuditIssue.audit_id == audit_id)
+    )
+    all_issues = issues_result.scalars().all()
+    top_issues = sorted(all_issues, key=lambda i: _severity_order(i.severity))[:5]
+    top_issues_dicts = [
+        {
+            "severity": (i.severity or "MEDIUM").upper(),
+            "title": i.title,
+        }
+        for i in top_issues
+    ]
+
+    # ── Send client report email (with PDF) ───────────────────────────
+    client_email_sent = False
+    try:
+        from services.email_service import send_client_report
+        client_email_sent = send_client_report(
+            to_email=request.email,
+            first_name=request.firstName or "",
+            website_url=audit.url,
+            audit_id=audit_id,
+            overall_score=overall_dict["overallScore"],
+            components=overall_dict["components"],
+            top_issues=top_issues_dicts,
+            pdf_bytes=pdf_bytes,
+        )
+    except Exception as e:
+        print(f"[UNLOCK] Client email error: {e}")
+
+    # ── Send admin notification ───────────────────────────────────────
+    admin_email_sent = False
     try:
         from services.email_service import send_admin_unlock
-        email_sent = send_admin_unlock(audit.url, audit_id, request.email, lead_id)
+        admin_email_sent = send_admin_unlock(audit.url, audit_id, request.email, lead_id)
     except Exception as e:
-        print(f"Unlock notification error: {e}")
+        print(f"[UNLOCK] Admin notification error: {e}")
 
     return {
         "auditId": audit_id,
         "leadId": lead_id,
         "fullReportUrl": f"/api/ave/{audit_id}/full",
-        "pdfUrl": f"/api/reports/pdf?auditId={audit_id}",
-        "emailSent": email_sent,
+        "pdfUrl": f"/api/audit/{audit_id}/pdf?lang=en",
+        "clientEmailSent": client_email_sent,
+        "adminEmailSent": admin_email_sent,
         "catalogVersion": "v1",
         "reportContractVersion": "v1",
         "issueLibraryVersion": "v1",

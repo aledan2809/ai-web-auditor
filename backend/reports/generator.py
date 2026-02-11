@@ -628,14 +628,11 @@ def _create_styles():
         textColor=colors.HexColor('#2d3748')
     ))
 
-    styles.add(ParagraphStyle(
-        name='BodyText',
-        parent=styles['Normal'],
-        fontSize=10,
-        leading=14,
-        alignment=TA_JUSTIFY,
-        textColor=colors.HexColor('#4a5568')
-    ))
+    # Override built-in BodyText (already exists in default stylesheet)
+    styles['BodyText'].fontSize = 10
+    styles['BodyText'].leading = 14
+    styles['BodyText'].alignment = TA_JUSTIFY
+    styles['BodyText'].textColor = colors.HexColor('#4a5568')
 
     styles.add(ParagraphStyle(
         name='SmallText',

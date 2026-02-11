@@ -20,8 +20,12 @@ import os
 from typing import Optional
 from datetime import datetime, timezone
 
+import base64
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, From, To, Subject, Content, MimeType
+from sendgrid.helpers.mail import (
+    Mail, From, To, Subject, Content, MimeType,
+    Attachment, FileContent, FileName, FileType, Disposition,
+)
 
 
 # ── Config ────────────────────────────────────────────────────────────
@@ -225,12 +229,164 @@ def send_admin_new_audit(website_url: str, audit_id: str, email: Optional[str] =
 def send_admin_unlock(website_url: str, audit_id: str, email: str, lead_id: str) -> bool:
     """Notify admin about report unlock."""
     html = _base_html(f"""
-    <h2 style="margin:0 0 16px;color:#22c55e;">Report Unlocked!</h2>
+    <h2 style="margin:0 0 16px;color:#22c55e;">New Lead — Report Unlocked!</h2>
     <table style="width:100%;border-collapse:collapse;">
       <tr><td style="padding:8px;color:#888;">URL:</td><td style="padding:8px;"><strong>{website_url}</strong></td></tr>
       <tr><td style="padding:8px;color:#888;">Email:</td><td style="padding:8px;"><strong>{email}</strong></td></tr>
       <tr><td style="padding:8px;color:#888;">Lead ID:</td><td style="padding:8px;">{lead_id}</td></tr>
       <tr><td style="padding:8px;color:#888;">Audit ID:</td><td style="padding:8px;">{audit_id}</td></tr>
+      <tr><td style="padding:8px;color:#888;">Time:</td><td style="padding:8px;">{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}</td></tr>
     </table>
     """)
-    return _send(ADMIN_EMAIL, f"[AVE] Unlocked: {email} — {website_url}", html)
+    return _send(ADMIN_EMAIL, f"[AVE] New Lead: {email} — {website_url}", html)
+
+
+# ── Client report email (with PDF attachment) ─────────────────────────
+
+def _client_report_html(
+    first_name: str,
+    website_url: str,
+    audit_id: str,
+    overall_score: int,
+    components: list[dict],
+    top_issues: list[dict],
+) -> str:
+    """Build the formal client email with audit summary."""
+    score_color = "#22c55e" if overall_score >= 75 else "#f59e0b" if overall_score >= 55 else "#ef4444"
+    greeting = f"Hi {first_name}," if first_name else "Hello,"
+
+    # Build component rows
+    comp_rows = ""
+    for c in components[:9]:
+        name = c.get("name", c.get("componentId", ""))
+        score = c.get("score", 0)
+        sc = "#22c55e" if score >= 75 else "#f59e0b" if score >= 55 else "#ef4444"
+        comp_rows += f"""
+        <tr>
+          <td style="padding:8px 12px;border-bottom:1px solid #eee;color:#333;">{name}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;">
+            <span style="font-weight:bold;color:{sc};">{score}/100</span>
+          </td>
+        </tr>"""
+
+    # Build top issues list
+    severity_colors = {"CRITICAL": "#ef4444", "HIGH": "#f59e0b", "MEDIUM": "#8b5cf6", "LOW": "#94a3b8"}
+    issue_rows = ""
+    for iss in top_issues[:5]:
+        sev = iss.get("severity", "MEDIUM")
+        sc = severity_colors.get(sev, "#8b5cf6")
+        issue_rows += f"""
+        <tr>
+          <td style="padding:6px 12px;border-bottom:1px solid #eee;">
+            <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:bold;color:#fff;background:{sc};">{sev}</span>
+          </td>
+          <td style="padding:6px 12px;border-bottom:1px solid #eee;color:#333;font-size:13px;">{iss.get("title", "")}</td>
+        </tr>"""
+
+    full_report_link = f"{BASE_URL}?auditId={audit_id}&view=full"
+
+    return _base_html(f"""
+    <h2 style="margin:0 0 8px;color:#1a1a2e;">Your Website Audit Report</h2>
+    <p style="color:#555;line-height:1.6;margin:0 0 20px;">
+      {greeting}
+    </p>
+    <p style="color:#555;line-height:1.6;">
+      Thank you for using <strong>AVE</strong> — your AI-powered website auditor.
+      We've completed a comprehensive analysis of <strong>{website_url}</strong>
+      across 9 key areas. Please find the full PDF report attached.
+    </p>
+
+    <!-- Score circle -->
+    <div style="text-align:center;margin:28px 0;">
+      <div style="display:inline-block;width:110px;height:110px;border-radius:50%;border:7px solid {score_color};line-height:110px;font-size:36px;font-weight:bold;color:{score_color};">
+        {overall_score}
+      </div>
+      <p style="color:#888;margin:8px 0 0;font-size:14px;">Overall Score</p>
+    </div>
+
+    <!-- Component scores table -->
+    <h3 style="color:#1a1a2e;margin:24px 0 12px;font-size:16px;">Component Scores</h3>
+    <table style="width:100%;border-collapse:collapse;border:1px solid #eee;border-radius:6px;">
+      <tr style="background:#f8f8fc;">
+        <th style="padding:10px 12px;text-align:left;color:#666;font-size:13px;">Component</th>
+        <th style="padding:10px 12px;text-align:center;color:#666;font-size:13px;">Score</th>
+      </tr>
+      {comp_rows}
+    </table>
+
+    <!-- Top issues -->
+    <h3 style="color:#1a1a2e;margin:24px 0 12px;font-size:16px;">Top Issues Found</h3>
+    <table style="width:100%;border-collapse:collapse;border:1px solid #eee;">
+      {issue_rows}
+    </table>
+    <p style="color:#888;font-size:12px;margin:8px 0 0;">
+      See the attached PDF for the complete list of issues and fix recommendations.
+    </p>
+
+    <!-- CTA -->
+    <div style="text-align:center;margin:28px 0;">
+      <a href="{full_report_link}" style="display:inline-block;background:linear-gradient(135deg,#06b6d4,#8b5cf6,#ec4899);color:#fff;padding:14px 36px;border-radius:30px;text-decoration:none;font-weight:bold;font-size:15px;">
+        View Interactive Report
+      </a>
+    </div>
+
+    <div style="background:#f8f8fc;border-radius:8px;padding:16px 20px;margin:20px 0;">
+      <p style="color:#555;margin:0 0 8px;font-size:14px;font-weight:bold;">Need help fixing these issues?</p>
+      <p style="color:#777;margin:0;font-size:13px;line-height:1.5;">
+        Our team at <strong>TechBiz</strong> can implement the recommended fixes for you.
+        Reply to this email or WhatsApp us at <strong>+971 52 901 6540</strong>.
+      </p>
+    </div>
+    """)
+
+
+def send_client_report(
+    to_email: str,
+    first_name: str,
+    website_url: str,
+    audit_id: str,
+    overall_score: int,
+    components: list[dict],
+    top_issues: list[dict],
+    pdf_bytes: Optional[bytes] = None,
+) -> bool:
+    """
+    Send the formal audit report email to the client.
+    Includes audit summary + PDF attachment if available.
+    """
+    client = _get_client()
+    if not client:
+        print(f"[EMAIL] SendGrid not configured. Would send report to {to_email}")
+        return False
+
+    html = _client_report_html(
+        first_name, website_url, audit_id, overall_score, components, top_issues,
+    )
+    name_part = f" {first_name}" if first_name else ""
+    subject = f"{website_url} — Audit Report (Score: {overall_score}/100)"
+
+    message = Mail(
+        from_email=From(FROM_EMAIL, FROM_NAME),
+        to_emails=To(to_email),
+        subject=Subject(subject),
+        html_content=Content(MimeType.html, html),
+    )
+
+    # Attach PDF if available
+    if pdf_bytes:
+        encoded = base64.b64encode(pdf_bytes).decode("ascii")
+        attachment = Attachment(
+            FileContent(encoded),
+            FileName(f"audit-report-{audit_id[:8]}.pdf"),
+            FileType("application/pdf"),
+            Disposition("attachment"),
+        )
+        message.attachment = attachment
+
+    try:
+        response = client.send(message)
+        print(f"[EMAIL] Client report sent to {to_email} (status={response.status_code}, pdf={'yes' if pdf_bytes else 'no'})")
+        return 200 <= response.status_code < 300
+    except Exception as e:
+        print(f"[EMAIL] Error sending client report to {to_email}: {e}")
+        return False
