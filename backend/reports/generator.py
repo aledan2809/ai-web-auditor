@@ -704,6 +704,7 @@ def _build_cover_page(audit: AuditResult, styles, lang: str) -> list:
     """Build cover page with executive summary"""
     from reportlab.lib import colors
     from reportlab.lib.units import cm
+    from reportlab.lib.styles import ParagraphStyle
     from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
     from reportlab.lib.enums import TA_CENTER
 
@@ -802,6 +803,7 @@ def _build_category_analysis(audit: AuditResult, styles, lang: str) -> list:
     """Build category-by-category analysis with justifications"""
     from reportlab.lib import colors
     from reportlab.lib.units import cm
+    from reportlab.lib.styles import ParagraphStyle
     from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, KeepTogether, Image
     from reportlab.lib.enums import TA_LEFT
 
@@ -1061,6 +1063,7 @@ def _build_summary_and_cta(audit: AuditResult, styles, lang: str) -> list:
     """Build summary and Website Guru CTA"""
     from reportlab.lib import colors
     from reportlab.lib.units import cm
+    from reportlab.lib.styles import ParagraphStyle
     from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
     from reportlab.lib.enums import TA_CENTER
 
