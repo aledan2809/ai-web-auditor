@@ -10,6 +10,8 @@ from sqlalchemy import select, func
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime, timezone
+from urllib.parse import urlparse
+import re
 import uuid
 
 from database.connection import get_db
@@ -40,6 +42,36 @@ class AveUnlockRequest(BaseModel):
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
+
+def normalize_url(raw: str) -> str:
+    """Normalize user input into a valid URL.
+    Accepts: racex.ro, www.racex.ro, http://racex.ro, HTTPS://RACEX.RO
+    """
+    v = (raw or "").strip().strip("\"'")
+    if not v:
+        raise HTTPException(status_code=400, detail="URL is required")
+
+    # Add protocol if missing (case-insensitive check)
+    if not re.match(r'^https?://', v, re.IGNORECASE):
+        v = "https://" + v
+
+    # Validate with urlparse
+    parsed = urlparse(v)
+    if not parsed.netloc or '.' not in parsed.netloc:
+        raise HTTPException(
+            status_code=400,
+            detail="Please enter a valid domain (e.g. example.com)",
+        )
+
+    # Lowercase scheme and host, preserve path
+    v = f"{parsed.scheme.lower()}://{parsed.netloc.lower()}{parsed.path}"
+
+    # Strip trailing slash from bare domains
+    if v.endswith("/") and parsed.path in ("", "/"):
+        v = v.rstrip("/")
+
+    return v
+
 
 def _generate_id(prefix: str = "aud") -> str:
     return f"{prefix}_{uuid.uuid4().hex[:12]}"
@@ -142,9 +174,7 @@ async def ave_start_audit(
     """
     from repositories.audit_repo import AuditRepository
 
-    url = request.websiteUrl.strip()
-    if not url.startswith("http"):
-        url = "https://" + url
+    url = normalize_url(request.websiteUrl)
 
     audit_repo = AuditRepository(db)
     audit = await audit_repo.create(
