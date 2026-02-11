@@ -304,7 +304,7 @@ async def ave_unlock(
 
     # Create lead record
     lead_id = _generate_id("lead")
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()  # naive UTC — matches DB column TIMESTAMP WITHOUT TIME ZONE
     ref = f"AVE-{now.strftime('%Y%m%d')}-{uuid.uuid4().hex[:4].upper()}"
     lead = Lead(
         id=lead_id,
