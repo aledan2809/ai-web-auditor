@@ -10,8 +10,11 @@ from typing import Optional, List
 from datetime import datetime
 from contextlib import asynccontextmanager
 import os
+import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 # Database
 from database.connection import get_db, init_db, close_db
@@ -65,10 +68,16 @@ async def lifespan(app: FastAPI):
     """Application lifespan - startup and shutdown"""
     import asyncio
 
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    )
+
     # Startup
-    print("Starting AI Web Auditor API...")
+    logger.info("Starting AI Web Auditor API...")
     await init_db()
-    print("Database initialized")
+    logger.info("Database initialized")
 
     # Start email scheduler in background
     from services.email_scheduler import run_email_scheduler_loop
@@ -166,6 +175,10 @@ async def start_audit(
         user_id=current_user.id if current_user else None
     )
 
+    # Commit now so the audit is visible to other sessions (background task, GET requests)
+    await db.commit()
+    logger.info(f"Audit {audit.id} created and committed for URL: {str(request.url)}")
+
     # Start audit in background
     background_tasks.add_task(
         run_audit,
@@ -196,6 +209,7 @@ async def get_audit(
     audit = await audit_repo.get_by_id(audit_id)
 
     if not audit:
+        logger.warning(f"Audit {audit_id} not found in GET request")
         raise HTTPException(status_code=404, detail="Audit negasit")
 
     # Build response
@@ -455,6 +469,9 @@ async def rerun_audit(
         user_id=current_user.id
     )
 
+    # Commit now so the audit is visible to other sessions (background task, GET requests)
+    await db.commit()
+
     # Start audit in background
     background_tasks.add_task(
         run_audit,
@@ -543,317 +560,333 @@ async def run_audit(
     """Run the actual audit in background"""
     from database.connection import async_session
 
-    async with async_session() as db:
-        try:
-            audit_repo = AuditRepository(db)
+    session = async_session()
+    try:
+        db = session
+        audit_repo = AuditRepository(db)
 
-            # Update status to running
-            await audit_repo.update_status(audit_id, "running")
-            await db.commit()
+        # Verify audit exists before proceeding
+        existing = await audit_repo.get_by_id(audit_id, include_relations=False)
+        if not existing:
+            logger.error(f"Background task: audit {audit_id} not found in DB - aborting")
+            return
 
-            # Import auditors
-            from auditors.performance import PerformanceAuditor
-            from auditors.seo import SEOAuditor
-            from auditors.security import SecurityAuditor
-            from auditors.gdpr import GDPRAuditor
-            from auditors.accessibility import AccessibilityAuditor
+        # Update status to running
+        await audit_repo.update_status(audit_id, "running")
+        await db.commit()
+        logger.info(f"Audit {audit_id} status -> running")
 
-            issues = []
-            scores = {}
+        # Import auditors
+        from auditors.performance import PerformanceAuditor
+        from auditors.seo import SEOAuditor
+        from auditors.security import SecurityAuditor
+        from auditors.gdpr import GDPRAuditor
+        from auditors.accessibility import AccessibilityAuditor
 
-            # Run selected audits
-            if "full" in audit_types or "performance" in audit_types:
-                perf_auditor = PerformanceAuditor()
-                perf_result = await perf_auditor.audit(url, mobile_test, lang)
-                scores["performance"] = perf_result.score
+        issues = []
+        scores = {}
 
-                # Save metrics
-                await audit_repo.add_performance_metrics(audit_id, {
-                    "score": perf_result.score,
-                    "lcp": getattr(perf_result.metrics, 'lcp', None),
-                    "fid": getattr(perf_result.metrics, 'fid', None),
-                    "cls": getattr(perf_result.metrics, 'cls', None),
-                    "ttfb": getattr(perf_result.metrics, 'ttfb', None),
-                    "speed_index": getattr(perf_result.metrics, 'speed_index', None),
-                    "total_blocking_time": getattr(perf_result.metrics, 'total_blocking_time', None),
-                    "first_contentful_paint": getattr(perf_result.metrics, 'first_contentful_paint', None)
+        # Run selected audits
+        if "full" in audit_types or "performance" in audit_types:
+            perf_auditor = PerformanceAuditor()
+            perf_result = await perf_auditor.audit(url, mobile_test, lang)
+            scores["performance"] = perf_result.score
+
+            # Save metrics
+            await audit_repo.add_performance_metrics(audit_id, {
+                "score": perf_result.score,
+                "lcp": getattr(perf_result.metrics, 'lcp', None),
+                "fid": getattr(perf_result.metrics, 'fid', None),
+                "cls": getattr(perf_result.metrics, 'cls', None),
+                "ttfb": getattr(perf_result.metrics, 'ttfb', None),
+                "speed_index": getattr(perf_result.metrics, 'speed_index', None),
+                "total_blocking_time": getattr(perf_result.metrics, 'total_blocking_time', None),
+                "first_contentful_paint": getattr(perf_result.metrics, 'first_contentful_paint', None)
+            })
+
+            for issue in perf_result.issues:
+                issues.append({
+                    "category": "performance",
+                    "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
+                    "title": issue.title,
+                    "description": issue.description,
+                    "recommendation": issue.recommendation,
+                    "affected_element": getattr(issue, 'affected_element', None),
+                    "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
+                    "complexity": getattr(issue, 'complexity', 'medium')
                 })
 
-                for issue in perf_result.issues:
-                    issues.append({
-                        "category": "performance",
-                        "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
-                        "title": issue.title,
-                        "description": issue.description,
-                        "recommendation": issue.recommendation,
-                        "affected_element": getattr(issue, 'affected_element', None),
-                        "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
-                        "complexity": getattr(issue, 'complexity', 'medium')
-                    })
+        if "full" in audit_types or "seo" in audit_types:
+            seo_auditor = SEOAuditor()
+            seo_result = await seo_auditor.audit(url, lang)
+            scores["seo"] = seo_result.score
+            scores["tseo"] = seo_result.tseo_score
+            scores["opseo"] = seo_result.opseo_score
 
-            if "full" in audit_types or "seo" in audit_types:
-                seo_auditor = SEOAuditor()
-                seo_result = await seo_auditor.audit(url, lang)
-                scores["seo"] = seo_result.score
-                scores["tseo"] = seo_result.tseo_score
-                scores["opseo"] = seo_result.opseo_score
+            await audit_repo.add_seo_metrics(audit_id, {
+                "score": seo_result.score,
+                "title": getattr(seo_result.metrics, 'title', None),
+                "title_length": getattr(seo_result.metrics, 'title_length', 0),
+                "meta_description": getattr(seo_result.metrics, 'meta_description', None),
+                "meta_description_length": getattr(seo_result.metrics, 'meta_description_length', 0),
+                "h1_count": getattr(seo_result.metrics, 'h1_count', 0),
+                "h1_texts": getattr(seo_result.metrics, 'h1_texts', []),
+                "canonical_url": getattr(seo_result.metrics, 'canonical_url', None),
+                "robots_txt_exists": getattr(seo_result.metrics, 'robots_txt_exists', False),
+                "sitemap_exists": getattr(seo_result.metrics, 'sitemap_exists', False),
+                "structured_data": getattr(seo_result.metrics, 'structured_data', []),
+                "broken_links": getattr(seo_result.metrics, 'broken_links', []),
+                "image_alt_missing": getattr(seo_result.metrics, 'image_alt_missing', 0)
+            })
 
-                await audit_repo.add_seo_metrics(audit_id, {
-                    "score": seo_result.score,
-                    "title": getattr(seo_result.metrics, 'title', None),
-                    "title_length": getattr(seo_result.metrics, 'title_length', 0),
-                    "meta_description": getattr(seo_result.metrics, 'meta_description', None),
-                    "meta_description_length": getattr(seo_result.metrics, 'meta_description_length', 0),
-                    "h1_count": getattr(seo_result.metrics, 'h1_count', 0),
-                    "h1_texts": getattr(seo_result.metrics, 'h1_texts', []),
-                    "canonical_url": getattr(seo_result.metrics, 'canonical_url', None),
-                    "robots_txt_exists": getattr(seo_result.metrics, 'robots_txt_exists', False),
-                    "sitemap_exists": getattr(seo_result.metrics, 'sitemap_exists', False),
-                    "structured_data": getattr(seo_result.metrics, 'structured_data', []),
-                    "broken_links": getattr(seo_result.metrics, 'broken_links', []),
-                    "image_alt_missing": getattr(seo_result.metrics, 'image_alt_missing', 0)
+            for issue in seo_result.issues:
+                issues.append({
+                    "category": "seo",
+                    "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
+                    "title": issue.title,
+                    "description": issue.description,
+                    "recommendation": issue.recommendation,
+                    "affected_element": getattr(issue, 'affected_element', None),
+                    "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
+                    "complexity": getattr(issue, 'complexity', 'medium')
                 })
 
-                for issue in seo_result.issues:
-                    issues.append({
-                        "category": "seo",
-                        "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
-                        "title": issue.title,
-                        "description": issue.description,
-                        "recommendation": issue.recommendation,
-                        "affected_element": getattr(issue, 'affected_element', None),
-                        "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
-                        "complexity": getattr(issue, 'complexity', 'medium')
-                    })
+        if "full" in audit_types or "security" in audit_types:
+            sec_auditor = SecurityAuditor()
+            sec_result = await sec_auditor.audit(url, lang)
+            scores["security"] = sec_result.score
 
-            if "full" in audit_types or "security" in audit_types:
-                sec_auditor = SecurityAuditor()
-                sec_result = await sec_auditor.audit(url, lang)
-                scores["security"] = sec_result.score
+            await audit_repo.add_security_metrics(audit_id, {
+                "score": sec_result.score,
+                "https_enabled": getattr(sec_result.metrics, 'https_enabled', False),
+                "ssl_valid": getattr(sec_result.metrics, 'ssl_valid', False),
+                "ssl_expiry_days": getattr(sec_result.metrics, 'ssl_expiry_days', None),
+                "hsts_enabled": getattr(sec_result.metrics, 'hsts_enabled', False),
+                "csp_enabled": getattr(sec_result.metrics, 'csp_enabled', False),
+                "x_frame_options": getattr(sec_result.metrics, 'x_frame_options', False),
+                "x_content_type_options": getattr(sec_result.metrics, 'x_content_type_options', False),
+                "cookies_secure": getattr(sec_result.metrics, 'cookies_secure', False),
+                "cookies_httponly": getattr(sec_result.metrics, 'cookies_httponly', False),
+                "exposed_emails": getattr(sec_result.metrics, 'exposed_emails', []),
+                "exposed_api_keys": getattr(sec_result.metrics, 'exposed_api_keys', False)
+            })
 
-                await audit_repo.add_security_metrics(audit_id, {
-                    "score": sec_result.score,
-                    "https_enabled": getattr(sec_result.metrics, 'https_enabled', False),
-                    "ssl_valid": getattr(sec_result.metrics, 'ssl_valid', False),
-                    "ssl_expiry_days": getattr(sec_result.metrics, 'ssl_expiry_days', None),
-                    "hsts_enabled": getattr(sec_result.metrics, 'hsts_enabled', False),
-                    "csp_enabled": getattr(sec_result.metrics, 'csp_enabled', False),
-                    "x_frame_options": getattr(sec_result.metrics, 'x_frame_options', False),
-                    "x_content_type_options": getattr(sec_result.metrics, 'x_content_type_options', False),
-                    "cookies_secure": getattr(sec_result.metrics, 'cookies_secure', False),
-                    "cookies_httponly": getattr(sec_result.metrics, 'cookies_httponly', False),
-                    "exposed_emails": getattr(sec_result.metrics, 'exposed_emails', []),
-                    "exposed_api_keys": getattr(sec_result.metrics, 'exposed_api_keys', False)
+            for issue in sec_result.issues:
+                issues.append({
+                    "category": "security",
+                    "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
+                    "title": issue.title,
+                    "description": issue.description,
+                    "recommendation": issue.recommendation,
+                    "affected_element": getattr(issue, 'affected_element', None),
+                    "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
+                    "complexity": getattr(issue, 'complexity', 'medium')
                 })
 
-                for issue in sec_result.issues:
-                    issues.append({
-                        "category": "security",
-                        "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
-                        "title": issue.title,
-                        "description": issue.description,
-                        "recommendation": issue.recommendation,
-                        "affected_element": getattr(issue, 'affected_element', None),
-                        "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
-                        "complexity": getattr(issue, 'complexity', 'medium')
-                    })
+        if "full" in audit_types or "gdpr" in audit_types:
+            gdpr_auditor = GDPRAuditor()
+            gdpr_result = await gdpr_auditor.audit(url, lang)
+            scores["gdpr"] = gdpr_result.score
 
-            if "full" in audit_types or "gdpr" in audit_types:
-                gdpr_auditor = GDPRAuditor()
-                gdpr_result = await gdpr_auditor.audit(url, lang)
-                scores["gdpr"] = gdpr_result.score
+            await audit_repo.add_gdpr_metrics(audit_id, {
+                "score": gdpr_result.score,
+                "cookie_banner_present": getattr(gdpr_result.metrics, 'cookie_banner_present', False),
+                "privacy_policy_link": getattr(gdpr_result.metrics, 'privacy_policy_link', False),
+                "cookie_categories_explained": getattr(gdpr_result.metrics, 'cookie_categories_explained', False),
+                "opt_out_option": getattr(gdpr_result.metrics, 'opt_out_option', False),
+                "third_party_trackers": getattr(gdpr_result.metrics, 'third_party_trackers', []),
+                "google_analytics": getattr(gdpr_result.metrics, 'google_analytics', False),
+                "facebook_pixel": getattr(gdpr_result.metrics, 'facebook_pixel', False),
+                "data_retention_info": getattr(gdpr_result.metrics, 'data_retention_info', False)
+            })
 
-                await audit_repo.add_gdpr_metrics(audit_id, {
-                    "score": gdpr_result.score,
-                    "cookie_banner_present": getattr(gdpr_result.metrics, 'cookie_banner_present', False),
-                    "privacy_policy_link": getattr(gdpr_result.metrics, 'privacy_policy_link', False),
-                    "cookie_categories_explained": getattr(gdpr_result.metrics, 'cookie_categories_explained', False),
-                    "opt_out_option": getattr(gdpr_result.metrics, 'opt_out_option', False),
-                    "third_party_trackers": getattr(gdpr_result.metrics, 'third_party_trackers', []),
-                    "google_analytics": getattr(gdpr_result.metrics, 'google_analytics', False),
-                    "facebook_pixel": getattr(gdpr_result.metrics, 'facebook_pixel', False),
-                    "data_retention_info": getattr(gdpr_result.metrics, 'data_retention_info', False)
+            for issue in gdpr_result.issues:
+                issues.append({
+                    "category": "gdpr",
+                    "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
+                    "title": issue.title,
+                    "description": issue.description,
+                    "recommendation": issue.recommendation,
+                    "affected_element": getattr(issue, 'affected_element', None),
+                    "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
+                    "complexity": getattr(issue, 'complexity', 'medium')
                 })
 
-                for issue in gdpr_result.issues:
-                    issues.append({
-                        "category": "gdpr",
-                        "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
-                        "title": issue.title,
-                        "description": issue.description,
-                        "recommendation": issue.recommendation,
-                        "affected_element": getattr(issue, 'affected_element', None),
-                        "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
-                        "complexity": getattr(issue, 'complexity', 'medium')
-                    })
+        if "full" in audit_types or "accessibility" in audit_types:
+            a11y_auditor = AccessibilityAuditor()
+            a11y_result = await a11y_auditor.audit(url, lang)
+            scores["accessibility"] = a11y_result.score
 
-            if "full" in audit_types or "accessibility" in audit_types:
-                a11y_auditor = AccessibilityAuditor()
-                a11y_result = await a11y_auditor.audit(url, lang)
-                scores["accessibility"] = a11y_result.score
+            await audit_repo.add_accessibility_metrics(audit_id, {
+                "score": a11y_result.score,
+                "wcag_level": getattr(a11y_result.metrics, 'wcag_level', "A"),
+                "color_contrast_issues": getattr(a11y_result.metrics, 'color_contrast_issues', 0),
+                "missing_alt_texts": getattr(a11y_result.metrics, 'missing_alt_texts', 0),
+                "missing_form_labels": getattr(a11y_result.metrics, 'missing_form_labels', 0),
+                "keyboard_navigation": getattr(a11y_result.metrics, 'keyboard_navigation', False),
+                "aria_usage": getattr(a11y_result.metrics, 'aria_usage', 0),
+                "heading_hierarchy_valid": getattr(a11y_result.metrics, 'heading_hierarchy_valid', False)
+            })
 
-                await audit_repo.add_accessibility_metrics(audit_id, {
-                    "score": a11y_result.score,
-                    "wcag_level": getattr(a11y_result.metrics, 'wcag_level', "A"),
-                    "color_contrast_issues": getattr(a11y_result.metrics, 'color_contrast_issues', 0),
-                    "missing_alt_texts": getattr(a11y_result.metrics, 'missing_alt_texts', 0),
-                    "missing_form_labels": getattr(a11y_result.metrics, 'missing_form_labels', 0),
-                    "keyboard_navigation": getattr(a11y_result.metrics, 'keyboard_navigation', False),
-                    "aria_usage": getattr(a11y_result.metrics, 'aria_usage', 0),
-                    "heading_hierarchy_valid": getattr(a11y_result.metrics, 'heading_hierarchy_valid', False)
+            for issue in a11y_result.issues:
+                issues.append({
+                    "category": "accessibility",
+                    "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
+                    "title": issue.title,
+                    "description": issue.description,
+                    "recommendation": issue.recommendation,
+                    "affected_element": getattr(issue, 'affected_element', None),
+                    "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
+                    "complexity": getattr(issue, 'complexity', 'medium')
                 })
 
-                for issue in a11y_result.issues:
-                    issues.append({
-                        "category": "accessibility",
-                        "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
-                        "title": issue.title,
-                        "description": issue.description,
-                        "recommendation": issue.recommendation,
-                        "affected_element": getattr(issue, 'affected_element', None),
-                        "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
-                        "complexity": getattr(issue, 'complexity', 'medium')
-                    })
+        # ── New v1 auditors: MOBUX, TRUST, COMP ──────────────────
+        if "full" in audit_types:
+            from auditors.mobile_ux import MobileUXAuditor
+            from auditors.trust import TrustAuditor
+            from auditors.competitor import CompetitorAuditor
 
-            # ── New v1 auditors: MOBUX, TRUST, COMP ──────────────────
-            if "full" in audit_types:
-                from auditors.mobile_ux import MobileUXAuditor
-                from auditors.trust import TrustAuditor
-                from auditors.competitor import CompetitorAuditor
-
-                # Mobile UX
-                try:
-                    mobux_auditor = MobileUXAuditor()
-                    mobux_result = await mobux_auditor.audit(url, lang)
-                    scores["mobile_ux"] = mobux_result.score
-                    for issue in mobux_result.issues:
-                        issues.append({
-                            "category": "ui_ux",
-                            "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
-                            "title": issue.title,
-                            "description": issue.description,
-                            "recommendation": issue.recommendation,
-                            "affected_element": getattr(issue, 'affected_element', None),
-                            "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
-                            "complexity": getattr(issue, 'complexity', 'medium')
-                        })
-                except Exception as e:
-                    print(f"Mobile UX audit error: {e}")
-
-                # Trust & Conversions
-                try:
-                    trust_auditor = TrustAuditor()
-                    trust_result = await trust_auditor.audit(url, lang)
-                    scores["trust"] = trust_result.score
-                    for issue in trust_result.issues:
-                        issues.append({
-                            "category": "ui_ux",
-                            "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
-                            "title": issue.title,
-                            "description": issue.description,
-                            "recommendation": issue.recommendation,
-                            "affected_element": getattr(issue, 'affected_element', None),
-                            "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
-                            "complexity": getattr(issue, 'complexity', 'medium')
-                        })
-                except Exception as e:
-                    print(f"Trust audit error: {e}")
-
-                # Competitor Gap (no competitor URL in v1 basic flow)
-                try:
-                    comp_auditor = CompetitorAuditor()
-                    comp_result = await comp_auditor.audit(url, competitor_url=None, lang=lang)
-                    scores["competitor"] = comp_result.score
-                    for issue in comp_result.issues:
-                        issues.append({
-                            "category": "full",
-                            "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
-                            "title": issue.title,
-                            "description": issue.description,
-                            "recommendation": issue.recommendation,
-                            "affected_element": getattr(issue, 'affected_element', None),
-                            "estimated_hours": getattr(issue, 'estimated_hours', 0),
-                            "complexity": getattr(issue, 'complexity', 'simple')
-                        })
-                except Exception as e:
-                    print(f"Competitor audit error: {e}")
-
-            # Add all issues to database
-            if issues:
-                await audit_repo.add_issues_bulk(audit_id, issues)
-
-            # Calculate overall score using weighted scoring engine
-            from services.scoring import from_legacy_scores, compute_overall_score
-            comp_scores = from_legacy_scores(
-                performance_score=scores.get("performance"),
-                seo_score=scores.get("seo"),
-                security_score=scores.get("security"),
-                gdpr_score=scores.get("gdpr"),
-                accessibility_score=scores.get("accessibility"),
-                mobile_ux_score=scores.get("mobile_ux"),
-                trust_score=scores.get("trust"),
-                competitor_score=scores.get("competitor"),
-                tseo_score=scores.get("tseo"),
-                opseo_score=scores.get("opseo"),
-            )
-            overall_result = compute_overall_score(comp_scores)
-            overall_score = overall_result.overall_score
-
-            # Update scores
-            await audit_repo.update_scores(
-                audit_id,
-                overall_score=overall_score,
-                performance_score=scores.get("performance"),
-                seo_score=scores.get("seo"),
-                security_score=scores.get("security"),
-                gdpr_score=scores.get("gdpr"),
-                accessibility_score=scores.get("accessibility"),
-                mobile_ux_score=scores.get("mobile_ux"),
-                trust_score=scores.get("trust"),
-                competitor_score=scores.get("competitor"),
-            )
-
-            # Take screenshots if requested
-            if include_screenshots:
-                try:
-                    from auditors.screenshots import take_screenshots
-                    screenshots = await take_screenshots(url, mobile_test)
-                    await audit_repo.update_screenshots(
-                        audit_id,
-                        desktop=screenshots.get('desktop'),
-                        mobile=screenshots.get('mobile')
-                    )
-                except Exception as e:
-                    print(f"Screenshot error: {e}")
-
-            # Mark as completed
-            await audit_repo.update_status(audit_id, "completed", datetime.utcnow())
-            await db.commit()
-
-            # Send "preview ready" email (non-blocking)
+            # Mobile UX
             try:
-                from services.email_service import send_preview_ready, send_admin_new_audit
-                # Find email from audit logs
-                from database.models import AuditLog
-                from sqlalchemy import select as sel
-                log_result = await db.execute(
-                    sel(AuditLog.email)
-                    .where(AuditLog.entity_id == audit_id, AuditLog.email.isnot(None))
-                    .limit(1)
-                )
-                lead_email = log_result.scalar_one_or_none()
-                if lead_email:
-                    send_preview_ready(lead_email, url, audit_id, overall_score)
-                send_admin_new_audit(url, audit_id, lead_email)
+                mobux_auditor = MobileUXAuditor()
+                mobux_result = await mobux_auditor.audit(url, lang)
+                scores["mobile_ux"] = mobux_result.score
+                for issue in mobux_result.issues:
+                    issues.append({
+                        "category": "ui_ux",
+                        "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
+                        "title": issue.title,
+                        "description": issue.description,
+                        "recommendation": issue.recommendation,
+                        "affected_element": getattr(issue, 'affected_element', None),
+                        "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
+                        "complexity": getattr(issue, 'complexity', 'medium')
+                    })
             except Exception as e:
-                print(f"Email notification error: {e}")
+                logger.warning(f"Mobile UX audit error: {e}")
 
+            # Trust & Conversions
+            try:
+                trust_auditor = TrustAuditor()
+                trust_result = await trust_auditor.audit(url, lang)
+                scores["trust"] = trust_result.score
+                for issue in trust_result.issues:
+                    issues.append({
+                        "category": "ui_ux",
+                        "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
+                        "title": issue.title,
+                        "description": issue.description,
+                        "recommendation": issue.recommendation,
+                        "affected_element": getattr(issue, 'affected_element', None),
+                        "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
+                        "complexity": getattr(issue, 'complexity', 'medium')
+                    })
+            except Exception as e:
+                logger.warning(f"Trust audit error: {e}")
+
+            # Competitor Gap (no competitor URL in v1 basic flow)
+            try:
+                comp_auditor = CompetitorAuditor()
+                comp_result = await comp_auditor.audit(url, competitor_url=None, lang=lang)
+                scores["competitor"] = comp_result.score
+                for issue in comp_result.issues:
+                    issues.append({
+                        "category": "full",
+                        "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
+                        "title": issue.title,
+                        "description": issue.description,
+                        "recommendation": issue.recommendation,
+                        "affected_element": getattr(issue, 'affected_element', None),
+                        "estimated_hours": getattr(issue, 'estimated_hours', 0),
+                        "complexity": getattr(issue, 'complexity', 'simple')
+                    })
+            except Exception as e:
+                logger.warning(f"Competitor audit error: {e}")
+
+        # Add all issues to database
+        if issues:
+            await audit_repo.add_issues_bulk(audit_id, issues)
+
+        # Calculate overall score using weighted scoring engine
+        from services.scoring import from_legacy_scores, compute_overall_score
+        comp_scores = from_legacy_scores(
+            performance_score=scores.get("performance"),
+            seo_score=scores.get("seo"),
+            security_score=scores.get("security"),
+            gdpr_score=scores.get("gdpr"),
+            accessibility_score=scores.get("accessibility"),
+            mobile_ux_score=scores.get("mobile_ux"),
+            trust_score=scores.get("trust"),
+            competitor_score=scores.get("competitor"),
+            tseo_score=scores.get("tseo"),
+            opseo_score=scores.get("opseo"),
+        )
+        overall_result = compute_overall_score(comp_scores)
+        overall_score = overall_result.overall_score
+
+        # Update scores
+        await audit_repo.update_scores(
+            audit_id,
+            overall_score=overall_score,
+            performance_score=scores.get("performance"),
+            seo_score=scores.get("seo"),
+            security_score=scores.get("security"),
+            gdpr_score=scores.get("gdpr"),
+            accessibility_score=scores.get("accessibility"),
+            mobile_ux_score=scores.get("mobile_ux"),
+            trust_score=scores.get("trust"),
+            competitor_score=scores.get("competitor"),
+        )
+
+        # Take screenshots if requested
+        if include_screenshots:
+            try:
+                from auditors.screenshots import take_screenshots
+                screenshots = await take_screenshots(url, mobile_test)
+                await audit_repo.update_screenshots(
+                    audit_id,
+                    desktop=screenshots.get('desktop'),
+                    mobile=screenshots.get('mobile')
+                )
+            except Exception as e:
+                logger.warning(f"Screenshot error for audit {audit_id}: {e}")
+
+        # Mark as completed
+        await audit_repo.update_status(audit_id, "completed", datetime.utcnow())
+        await db.commit()
+        logger.info(f"Audit {audit_id} completed successfully")
+
+        # Send "preview ready" email (non-blocking)
+        try:
+            from services.email_service import send_preview_ready, send_admin_new_audit
+            # Find email from audit logs
+            from database.models import AuditLog
+            from sqlalchemy import select as sel
+            log_result = await db.execute(
+                sel(AuditLog.email)
+                .where(AuditLog.entity_id == audit_id, AuditLog.email.isnot(None))
+                .limit(1)
+            )
+            lead_email = log_result.scalar_one_or_none()
+            if lead_email:
+                send_preview_ready(lead_email, url, audit_id, overall_score)
+            send_admin_new_audit(url, audit_id, lead_email)
         except Exception as e:
+            logger.warning(f"Email notification error for audit {audit_id}: {e}")
+
+    except Exception as e:
+        logger.error(f"Audit {audit_id} failed: {e}", exc_info=True)
+        try:
             await audit_repo.update_status(audit_id, "failed")
             await db.commit()
-            print(f"Audit failed: {e}")
-            import traceback
-            traceback.print_exc()
+        except Exception as inner_e:
+            logger.error(f"Failed to mark audit {audit_id} as failed: {inner_e}")
+            try:
+                await db.rollback()
+            except Exception:
+                pass
+    finally:
+        await session.close()
 
 
 async def run_api_tests(test_id: str, base_url: str, endpoints: list, auth_token: str):

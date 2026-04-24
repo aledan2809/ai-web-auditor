@@ -47,6 +47,7 @@ export interface AuditResult {
   completed_at?: string
   overall_score: number
   performance_score?: number
+  technical_seo_score?: number
   seo_score?: number
   security_score?: number
   gdpr_score?: number

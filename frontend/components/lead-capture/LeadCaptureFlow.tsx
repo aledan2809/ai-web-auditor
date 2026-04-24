@@ -59,9 +59,10 @@ export default function LeadCaptureFlow() {
         const response = await auditApi.getStatus(leadData.auditId)
 
         if (response.data.status === 'completed') {
-          setLeadData(prev => ({ ...prev, auditResult: response.data }))
-          setStep('teaser-results')
           if (interval) clearInterval(interval)
+          // Redirect to AVE teaser page with the nice 9-component design
+          window.location.href = `/audit/${leadData.auditId}/teaser`
+          return
         } else if (response.data.status === 'failed') {
           setError('Audit failed. Please try again.')
           setStep('url-input')
@@ -307,10 +308,14 @@ export default function LeadCaptureFlow() {
           scores={{
             overall: leadData.auditResult.overall_score,
             performance: leadData.auditResult.performance_score,
+            technical_seo: leadData.auditResult.technical_seo_score,
             seo: leadData.auditResult.seo_score,
             security: leadData.auditResult.security_score,
             gdpr: leadData.auditResult.gdpr_score,
-            accessibility: leadData.auditResult.accessibility_score
+            accessibility: leadData.auditResult.accessibility_score,
+            mobile_ux: leadData.auditResult.mobile_ux_score,
+            trust: leadData.auditResult.trust_score,
+            competitor: leadData.auditResult.competitor_score,
           }}
           issuesCount={leadData.auditResult.issues?.length || 0}
           onSelectPackage={() => setStep('package-selection')}

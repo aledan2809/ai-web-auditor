@@ -28,7 +28,7 @@ const DEFAULT_PACKAGES: Package[] = [
     price: 0,
     currency: 'EUR',
     auditsIncluded: 2,
-    totalAudits: 6,
+    totalAudits: 9,
     features: [
       'Choose 2 audit types',
       'Basic score overview',
@@ -43,7 +43,7 @@ const DEFAULT_PACKAGES: Package[] = [
     price: 1.99,
     currency: 'EUR',
     auditsIncluded: 4,
-    totalAudits: 6,
+    totalAudits: 9,
     features: [
       'Choose 4 audit types',
       'Detailed issue breakdown',
@@ -59,7 +59,7 @@ const DEFAULT_PACKAGES: Package[] = [
     price: 4.99,
     currency: 'EUR',
     auditsIncluded: 6,
-    totalAudits: 6,
+    totalAudits: 9,
     features: [
       'All 6 audit types',
       'Full issue details',
@@ -74,11 +74,14 @@ const DEFAULT_PACKAGES: Package[] = [
 // Audit types available
 const AUDIT_TYPES = [
   { id: 'performance', name: 'Performance', icon: Zap },
-  { id: 'seo', name: 'SEO', icon: FileText },
+  { id: 'technical_seo', name: 'Technical SEO', icon: Clock },
+  { id: 'seo', name: 'On-Page SEO', icon: FileText },
   { id: 'security', name: 'Security', icon: Shield },
-  { id: 'gdpr', name: 'GDPR', icon: Shield },
+  { id: 'gdpr', name: 'Privacy / GDPR', icon: Shield },
   { id: 'accessibility', name: 'Accessibility', icon: Check },
-  { id: 'technical', name: 'Technical', icon: Clock },
+  { id: 'mobile_ux', name: 'Mobile UX', icon: Zap },
+  { id: 'trust', name: 'Trust', icon: Star },
+  { id: 'competitor', name: 'Competitor', icon: FileText },
 ]
 
 interface PackageSelectionProps {

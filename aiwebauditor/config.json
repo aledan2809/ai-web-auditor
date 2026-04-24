@@ -1,0 +1,25 @@
+{
+  "max_depth": 3,
+  "timeout": 30,
+  "user_agent": "AIWebAuditor/1.0",
+  "categories": ["seo", "accessibility", "security", "performance"],
+  "accessibility": {
+    "standard": "WCAG_2.1_AA"
+  },
+  "performance": {
+    "mobile": true,
+    "thresholds": {
+      "lcp_good": 2.5,
+      "lcp_poor": 4.0,
+      "cls_good": 0.1,
+      "cls_poor": 0.25,
+      "ttfb_good": 800,
+      "ttfb_poor": 1800
+    }
+  },
+  "output": {
+    "format": "json",
+    "include_metadata": true
+  },
+  "plugins_dir": "plugins"
+}

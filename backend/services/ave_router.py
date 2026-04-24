@@ -183,6 +183,9 @@ async def ave_start_audit(
         user_id=None,
     )
 
+    # Commit now so the audit is visible to other sessions (background task, GET requests)
+    await db.commit()
+
     # Import and run audit in background
     from main import run_audit
     background_tasks.add_task(

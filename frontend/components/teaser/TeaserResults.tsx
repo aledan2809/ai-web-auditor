@@ -18,6 +18,10 @@ interface TeaserResultsProps {
     security?: number
     gdpr?: number
     accessibility?: number
+    mobile_ux?: number
+    trust?: number
+    competitor?: number
+    technical_seo?: number
   }
   issuesCount: number
   onSelectPackage: () => void
@@ -57,10 +61,12 @@ function ScoreGauge({ score, label, size = 'normal' }: { score: number | null; l
 // Fake blurred issues for teaser effect
 const FAKE_ISSUES = [
   { severity: 'critical', title: 'Security vulnerability detected in...', category: 'Security' },
-  { severity: 'high', title: 'Missing meta description on 5 pages...', category: 'SEO' },
+  { severity: 'high', title: 'Missing meta description on 5 pages...', category: 'On-Page SEO' },
   { severity: 'medium', title: 'Images not optimized, causing slow...', category: 'Performance' },
-  { severity: 'high', title: 'Cookie consent banner missing GDPR...', category: 'GDPR' },
+  { severity: 'high', title: 'Cookie consent banner missing GDPR...', category: 'Privacy' },
   { severity: 'medium', title: 'Insufficient color contrast on buttons...', category: 'Accessibility' },
+  { severity: 'high', title: 'Viewport not configured for mobile...', category: 'Mobile UX' },
+  { severity: 'medium', title: 'Missing SSL certificate chain...', category: 'Trust' },
 ]
 
 const severityColors = {
@@ -77,10 +83,14 @@ export default function TeaserResults({
 }: TeaserResultsProps) {
   const scoreItems: TeaserScore[] = [
     { label: 'Performance', score: scores.performance ?? null, color: 'orange' },
-    { label: 'SEO', score: scores.seo ?? null, color: 'blue' },
+    { label: 'Technical SEO', score: scores.technical_seo ?? null, color: 'indigo' },
+    { label: 'On-Page SEO', score: scores.seo ?? null, color: 'blue' },
     { label: 'Security', score: scores.security ?? null, color: 'green' },
-    { label: 'GDPR', score: scores.gdpr ?? null, color: 'purple' },
+    { label: 'Privacy / GDPR', score: scores.gdpr ?? null, color: 'purple' },
     { label: 'Accessibility', score: scores.accessibility ?? null, color: 'cyan' },
+    { label: 'Mobile UX', score: scores.mobile_ux ?? null, color: 'pink' },
+    { label: 'Trust', score: scores.trust ?? null, color: 'amber' },
+    { label: 'Competitor', score: scores.competitor ?? null, color: 'emerald' },
   ].filter(s => s.score !== null)
 
   return (
@@ -202,7 +212,7 @@ export default function TeaserResults({
               <span className="font-semibold">Full</span>
             </div>
             <div className="text-2xl font-bold mb-1">€4.99</div>
-            <p className="text-sm text-primary-100">All 6 types + Pro PDF + AI</p>
+            <p className="text-sm text-primary-100">All 9 types + Pro PDF + AI</p>
           </div>
         </div>
 

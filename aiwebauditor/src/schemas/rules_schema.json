@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AIWebAuditor Plugin Rule",
+  "type": "object",
+  "required": ["name", "category", "severity", "check_function"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique rule identifier"
+    },
+    "category": {
+      "type": "string",
+      "enum": ["seo", "accessibility", "security", "performance", "gdpr"]
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low", "info"]
+    },
+    "title": {
+      "type": "string",
+      "description": "Human-readable title"
+    },
+    "description": {
+      "type": "string",
+      "description": "What this rule checks"
+    },
+    "recommendation": {
+      "type": "string",
+      "description": "How to fix if rule fails"
+    },
+    "check_function": {
+      "type": "string",
+      "description": "Name of the check function in the plugin module"
+    },
+    "estimated_hours": {
+      "type": "number",
+      "default": 1.0
+    },
+    "complexity": {
+      "type": "string",
+      "enum": ["simple", "medium", "complex"],
+      "default": "medium"
+    }
+  }
+}
