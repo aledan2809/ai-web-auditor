@@ -18,10 +18,11 @@
 2. `/admin` route accessible without authentication (HTTP 200)
 
 **Fix plan**:
+- **ÎNAINTE de orice fix**: `curl -I https://techbiz.ae/admin` — confirmă dacă returnează 200 cu conținut real sau redirect JS-side. Dacă e false-positive, marchează explicit în TODO și scade severitatea.
 - Add CSP header in Next.js `next.config.js` headers() or middleware.ts
 - Verify /admin route — if it's intentionally public (landing/demo), mark as false-positive; otherwise add auth middleware
 
-**Estimated effort**: 30-60min.
+**Estimated effort**: 30-60min (inclusiv investigare /admin).
 
 ---
 
