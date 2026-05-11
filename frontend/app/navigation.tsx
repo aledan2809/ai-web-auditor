@@ -32,7 +32,7 @@ export function Navigation() {
           <div className="flex items-center space-x-4">
             <Link
               href="/"
-              className={`text-gray-600 hover:text-gray-900 ${pathname === '/' ? 'text-primary-600' : ''}`}
+              className={`min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900 ${pathname === '/' ? 'text-primary-600' : ''}`}
             >
               Audit Nou
             </Link>
@@ -41,14 +41,14 @@ export function Navigation() {
               <>
                 <Link
                   href="/history"
-                  className={`text-gray-600 hover:text-gray-900 ${pathname === '/history' ? 'text-primary-600' : ''}`}
+                  className={`min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900 ${pathname === '/history' ? 'text-primary-600' : ''}`}
                 >
                   Istoric
                 </Link>
 
                 <Link
                   href="/pricing"
-                  className={`text-gray-600 hover:text-gray-900 ${pathname === '/pricing' ? 'text-primary-600' : ''}`}
+                  className={`min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900 ${pathname === '/pricing' ? 'text-primary-600' : ''}`}
                 >
                   Preturi
                 </Link>
@@ -62,7 +62,8 @@ export function Navigation() {
                     {user?.role === 'admin' && (
                       <Link
                         href="/admin"
-                        className={`text-gray-600 hover:text-gray-900 ${pathname.startsWith('/admin') ? 'text-primary-600' : ''}`}
+                        className={`min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-gray-600 hover:text-gray-900 ${pathname.startsWith('/admin') ? 'text-primary-600' : ''}`}
+                        aria-label="Admin panel"
                       >
                         <Settings className="w-5 h-5" />
                       </Link>
@@ -84,8 +85,9 @@ export function Navigation() {
 
                     <button
                       onClick={handleLogout}
-                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full"
+                      className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full"
                       title="Deconectare"
+                      aria-label="Deconectare"
                     >
                       <LogOut className="w-4 h-4" />
                     </button>
@@ -94,13 +96,13 @@ export function Navigation() {
                   <div className="flex items-center space-x-3 ml-4">
                     <Link
                       href="/login"
-                      className="text-gray-600 hover:text-gray-900"
+                      className="min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900"
                     >
                       Autentificare
                     </Link>
                     <Link
                       href="/register"
-                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                      className="min-h-[44px] inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
                     >
                       Inregistrare
                     </Link>
