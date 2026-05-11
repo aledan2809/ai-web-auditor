@@ -9,7 +9,7 @@
 
 ---
 
-## [ ] G-AIW-SEC-001 — [P1] [security] Missing CSP header + /admin unauthenticated (creat 2026-05-11)
+## [x] G-AIW-SEC-001 — [P1] [security] Missing CSP header + /admin unauthenticated (creat 2026-05-11, DONE 2026-05-11, commit 8953d5f)
 
 **Source**: `Reports/AUDIT_E2E_2026-04-28.md` security-scanner 80/100, 2 HIGH findings.
 
@@ -26,7 +26,7 @@
 
 ---
 
-## [ ] G-AIW-A11Y-001 — [P2] [a11y+mobile] Touch targets + skip nav (creat 2026-05-11)
+## [x] G-AIW-A11Y-001 — [P2] [a11y+mobile] Touch targets + skip nav (creat 2026-05-11, DONE 2026-05-11, commit 8953d5f)
 
 **Source**: `Reports/AUDIT_E2E_2026-04-28.md` mobile-tester 75/100 + a11y-scanner 98/100.
 
@@ -48,7 +48,8 @@
 |------|--------|--------|
 | 2026-04-28 | [7] E2E audit: 91/100 PASS, security-scanner 80 + mobile-tester 75 flagged | — |
 | 2026-05-11 | TODO_PERSISTENT.md created with G-AIW-SEC-001 + G-AIW-A11Y-001 | — |
+| 2026-05-11 | G-AIW-SEC-001 + G-AIW-A11Y-001 fixed: middleware.ts (server-side JWT auth on /admin), CSP headers (next.config.js), touch targets (nav), skip-nav (layout) | 8953d5f |
 
 ---
 
-*Last updated: 2026-05-11. Next action: G-AIW-SEC-001 security fix (P1).*
+*Last updated: 2026-05-11. Toate gap-urile închise. Next: deploy VPS1 + re-audit [7].*
