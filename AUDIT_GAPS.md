@@ -43,6 +43,19 @@
 - **Fix**: `min-h-[44px]` adăugat pe email input + password input (inline cu celelalte clase py-3). Register Link → `inline-flex items-center min-h-[44px]`. Fișier: `frontend/app/login/page.tsx`.
 - **Status**: **Eliminated** | 2026-05-17 | commit `d5d9777`
 
+### G-AIW-ML2W2-001 — Touch targets logo link + submit button + WCAG 2.4.7 focus (re-audit 2026-05-17 ML2 Wave 2)
+- **Severity**: P2 MEDIUM → MEDIUM
+- **Source**: Reports/AUDIT_E2E_2026-05-17.md (mobile-tester 88/100, ML2 Wave 2 [9] audit)
+- **Description**: 3/9 touch targets below 44×44px on `/login` (audit repeated issue from G-AIW-MOBILE-001 + 2 additional):
+  1. Logo link "AI Web Auditor" (navigation.tsx:27) — no `min-h-[44px]` or `inline-flex items-center`
+  2. Submit button "Autentificare" (login/page.tsx:83) — `py-3` only, no explicit `min-h-[44px]`
+  3. Nav links lacking `focus-visible` keyboard indicators (WCAG 2.4.7)
+- **Fix**: 
+  - Logo link: `min-h-[44px] inline-flex items-center` (commit `2805f36`)
+  - Submit button: `min-h-[44px]` added (commit `2805f36`)
+  - WG TRWG loop (`loop_trwg_mpa8vgyv_ki2dww`): logout try-catch, isMounted cleanup on login, logo `self-stretch`, `focus-visible:ring-2` on all nav links (commit `ecc6726`)
+- **Status**: **Eliminated** | 2026-05-18 | commits `2805f36` + `ecc6726` | deployed techbiz.ae + audit.techbiz.ae
+
 ---
 
 ## Gap Log
@@ -52,3 +65,4 @@
 | G-AIW-SEC-001 | P1 HIGH | 2026-04-28 | Eliminated 2026-05-11 | `8953d5f` |
 | G-AIW-A11Y-001 | P2 MEDIUM | 2026-04-28 | Eliminated 2026-05-11 | `8953d5f` |
 | G-AIW-MOBILE-001 | P3 LOW | 2026-05-12 | Eliminated 2026-05-17 | `d5d9777` |
+| G-AIW-ML2W2-001 | P2 MEDIUM | 2026-05-17 | Eliminated 2026-05-18 | `2805f36`+`ecc6726` |
