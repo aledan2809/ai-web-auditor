@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Globe, Search, Loader2, ArrowLeft, CheckCircle
+  Globe, Search, Loader2, ArrowLeft, CheckCircle, Zap, Brain, FileText
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { auditApi, leadsApi, AuditResult } from '@/lib/api'
@@ -86,13 +86,23 @@ export default function LeadCaptureFlow() {
     setError('')
 
     // Validate URL
-    let validUrl = url
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      validUrl = 'https://' + url
+    const trimmedUrl = url.trim()
+    if (!trimmedUrl) {
+      setError('Please enter a website URL.')
+      return
+    }
+
+    let validUrl = trimmedUrl
+    if (!validUrl.startsWith('http://') && !validUrl.startsWith('https://')) {
+      validUrl = 'https://' + validUrl
     }
 
     try {
-      new URL(validUrl)
+      const parsed = new URL(validUrl)
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        setError('Invalid URL. Please enter a valid http or https website address.')
+        return
+      }
     } catch {
       setError('Invalid URL. Please enter a valid website address.')
       return
@@ -157,7 +167,8 @@ export default function LeadCaptureFlow() {
       }
     } catch (err) {
       console.error('Failed to create lead:', err)
-      // Continue anyway - we don't want to block the user
+      setError('A apărut o eroare la salvarea datelor. Vă rugăm să încercați din nou.')
+      return
     }
 
     // Check if payment is required
@@ -215,7 +226,7 @@ export default function LeadCaptureFlow() {
 
       {/* URL Input Step */}
       {step === 'url-input' && (
-        <div className="space-y-8">
+        <div className="space-y-8 min-h-[70vh]">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
               Free Website Audit
@@ -238,7 +249,7 @@ export default function LeadCaptureFlow() {
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     placeholder="example.com or https://example.com"
-                    className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-lg"
+                    className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 text-lg"
                     required
                   />
                 </div>
@@ -268,14 +279,17 @@ export default function LeadCaptureFlow() {
           {/* Features */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FeatureCard
+              icon={<Zap className="w-8 h-8 text-primary-600" aria-hidden="true" />}
               title="Instant Scores"
               description="Get your overall score and category breakdown immediately"
             />
             <FeatureCard
+              icon={<Brain className="w-8 h-8 text-primary-600" aria-hidden="true" />}
               title="AI-Powered Analysis"
               description="Advanced algorithms detect issues human eyes miss"
             />
             <FeatureCard
+              icon={<FileText className="w-8 h-8 text-primary-600" aria-hidden="true" />}
               title="Actionable Report"
               description="Clear recommendations to improve your website"
             />
@@ -358,6 +372,11 @@ export default function LeadCaptureFlow() {
               We need a few details to send your report
             </p>
           </div>
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              {error}
+            </div>
+          )}
           <EnrollmentForm
             auditId={leadData.auditId}
             packageId={leadData.selectedPackage}
@@ -449,9 +468,10 @@ function StepIndicator({ currentStep }: { currentStep: FlowStep }) {
   )
 }
 
-function FeatureCard({ title, description }: { title: string; description: string }) {
+function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
-    <div className="bg-white p-6 rounded-lg shadow text-center">
+    <div role="presentation" className="bg-white p-6 rounded-lg shadow text-center">
+      <div className="flex justify-center mb-3">{icon}</div>
       <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
       <p className="text-sm text-gray-600">{description}</p>
     </div>
