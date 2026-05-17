@@ -77,8 +77,8 @@
 a:focus-visible,
 button:focus-visible,
 [role="button"]:focus-visible {
-  outline: 3px solid #2563eb !important;
-  outline-offset: 2px !important;
+  outline: 2px solid #1d4ed8 !important;
+  outline-offset: 3px !important;
 }
 
 input:focus-visible,
@@ -95,8 +95,8 @@ button:focus,
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 3px solid #2563eb;
-  outline-offset: 2px;
+  outline: 3px solid #2563eb !important;
+  outline-offset: 2px !important;
 }
 
 /* WCAG 1.4.3 — placeholder text contrast (≥3:1 ratio) */

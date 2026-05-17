@@ -38,7 +38,8 @@ export function Navigation() {
           <div className="flex items-center space-x-4">
             <Link
               href="/"
-              className={`min-h-[44px] min-w-[44px] inline-flex items-center px-2 py-2.5 text-gray-600 hover:text-gray-900 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded ${pathname === '/' ? 'text-primary-600' : ''}`}
+              lang="ro"
+              className={`min-h-[44px] min-w-[44px] inline-flex items-center px-3 text-gray-600 hover:text-gray-900 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded ${pathname === '/' ? 'text-primary-600' : ''}`}
             >
               Audit Nou
             </Link>
@@ -47,6 +48,7 @@ export function Navigation() {
               <>
                 <Link
                   href="/history"
+                  lang="ro"
                   className={`min-h-[44px] inline-flex items-center px-2 py-2.5 text-gray-600 hover:text-gray-900 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded ${pathname === '/history' ? 'text-primary-600' : ''}`}
                 >
                   Istoric
@@ -54,6 +56,7 @@ export function Navigation() {
 
                 <Link
                   href="/pricing"
+                  lang="ro"
                   className={`min-h-[44px] inline-flex items-center px-2 py-2.5 text-gray-600 hover:text-gray-900 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded ${pathname === '/pricing' ? 'text-primary-600' : ''}`}
                 >
                   Preturi
@@ -75,19 +78,23 @@ export function Navigation() {
                       </Link>
                     )}
 
-                    <div className="flex items-center gap-2 text-sm">
-                      <CreditCard className="w-4 h-4 text-gray-400" />
-                      <span className="font-medium text-primary-600">{user?.credits}</span>
-                    </div>
+                    {user != null && (
+                      <>
+                        <div className="flex items-center gap-2 text-sm">
+                          <CreditCard className="w-4 h-4 text-gray-400" />
+                          <span className="font-medium text-primary-600">{user.credits}</span>
+                        </div>
 
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-primary-600" />
-                      </div>
-                      <span className="text-sm text-gray-700 hidden sm:block">
-                        {user?.name || user?.email?.split('@')[0]}
-                      </span>
-                    </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                            <User className="w-4 h-4 text-primary-600" />
+                          </div>
+                          <span className="text-sm text-gray-700 hidden sm:block">
+                            {user.name || user.email?.split('@')[0]}
+                          </span>
+                        </div>
+                      </>
+                    )}
 
                     <button
                       onClick={handleLogout}
@@ -102,13 +109,13 @@ export function Navigation() {
                   <div className="flex items-center space-x-3 ml-4">
                     <Link
                       href="/login"
-                      className="min-h-[44px] min-w-[44px] inline-flex items-center px-2 py-2.5 text-gray-600 hover:text-gray-900 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded"
+                      className="self-stretch min-w-[44px] inline-flex items-center px-3 text-gray-600 hover:text-gray-900 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded"
                     >
                       Autentificare
                     </Link>
                     <Link
                       href="/register"
-                      className="min-h-[44px] inline-flex items-center px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                      className="h-11 inline-flex items-center px-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
                     >
                       Inregistrare
                     </Link>

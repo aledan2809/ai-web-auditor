@@ -120,19 +120,28 @@ export default function LeadCaptureFlow() {
         mobile_test: true
       })
 
-      if (response.data.success) {
+      if (response.data.success && response.data.audit_id) {
         setLeadData(prev => ({ ...prev, auditId: response.data.audit_id }))
       } else {
         setError('Failed to start audit. Please try again.')
         setStep('url-input')
       }
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Server connection error')
+    } catch (err: unknown) {
+      const message =
+        (err as any)?.response?.data?.detail ||
+        (err instanceof Error ? err.message : null) ||
+        'Server connection error'
+      setError(message)
       setStep('url-input')
     }
   }
 
   const handlePackageSelect = (packageId: string, selectedAudits: string[]) => {
+    if (!leadData.auditId) {
+      setError('Audit not found. Please start a new audit.')
+      setStep('url-input')
+      return
+    }
     setLeadData(prev => ({
       ...prev,
       selectedPackage: packageId,
@@ -226,7 +235,7 @@ export default function LeadCaptureFlow() {
 
       {/* URL Input Step */}
       {step === 'url-input' && (
-        <div className="space-y-8 min-h-[70vh]">
+        <div className="space-y-8">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
               Free Website Audit
@@ -243,7 +252,7 @@ export default function LeadCaptureFlow() {
                   Website URL
                 </label>
                 <div className="relative">
-                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                   <input
                     type="text"
                     value={url}
@@ -264,14 +273,14 @@ export default function LeadCaptureFlow() {
               <Button
                 type="submit"
                 size="lg"
-                className="w-full py-6 text-lg bg-primary-600 hover:bg-primary-700"
+                className="w-full py-6 text-lg bg-primary-600 hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
               >
                 <Search className="w-5 h-5 mr-2" />
                 Start Free Audit
               </Button>
             </form>
 
-            <p className="mt-4 text-center text-sm text-gray-500">
+            <p className="mt-4 text-center text-sm text-gray-600">
               No credit card required. Get your scores in 30 seconds.
             </p>
           </div>
@@ -303,7 +312,7 @@ export default function LeadCaptureFlow() {
             <p className="text-gray-600 mb-2">
               Our AI engine checks 9 critical areas: Performance, SEO, Security, GDPR, Accessibility, Mobile UX, Trust, Competitor analysis, and more.
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-700">
               Free audit · No credit card required · Results in 30 seconds
             </p>
           </div>

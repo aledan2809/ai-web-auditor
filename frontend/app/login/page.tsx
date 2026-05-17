@@ -30,7 +30,7 @@ export default function LoginPage() {
       setError('Adresa de email nu este validă')
       return
     }
-    if (password.trim().length === 0 || password.length < 6) {
+    if (password.trim().length < 6) {
       setError('Parola trebuie să aibă cel puțin 6 caractere')
       return
     }
@@ -97,6 +97,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="w-full pl-10 pr-4 py-3 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1"
+                  minLength={6}
                   required
                 />
               </div>
