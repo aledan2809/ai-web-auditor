@@ -30,7 +30,18 @@
 
 ## Open Gaps
 
-_(niciun gap deschis la 2026-05-11)_
+*(none)*
+
+---
+
+## Eliminated Gaps (recent)
+
+### G-AIW-MOBILE-001 — Touch targets 3/9 pe `/login` (re-audit 2026-05-12)
+- **Severity**: P3 LOW
+- **Source**: Reports/AUDIT_E2E_2026-05-11.md (mobile-tester 88/100)
+- **Description**: 3/9 touch targets sub 44px pe `/login` across iPhone 13 + Pixel 5 + iPad Pro 11. Login form elements (email input, password input, register link) lipseau `min-h-[44px]`. Nav elements fixate anterior în G-AIW-A11Y-001 (`8953d5f`).
+- **Fix**: `min-h-[44px]` adăugat pe email input + password input (inline cu celelalte clase py-3). Register Link → `inline-flex items-center min-h-[44px]`. Fișier: `frontend/app/login/page.tsx`.
+- **Status**: **Eliminated** | 2026-05-17 | commit pending ML2 Wave 2
 
 ---
 
@@ -40,3 +51,4 @@ _(niciun gap deschis la 2026-05-11)_
 |----|----------|--------|--------|--------|
 | G-AIW-SEC-001 | P1 HIGH | 2026-04-28 | Eliminated 2026-05-11 | `8953d5f` |
 | G-AIW-A11Y-001 | P2 MEDIUM | 2026-04-28 | Eliminated 2026-05-11 | `8953d5f` |
+| G-AIW-MOBILE-001 | P3 LOW | 2026-05-12 | Eliminated 2026-05-17 | pending |
