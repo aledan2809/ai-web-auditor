@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, Loader2, AlertCircle } from 'lucide-react'
@@ -13,6 +13,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,11 +28,17 @@ export default function LoginPage() {
 
     try {
       await login(email, password)
-      router.push('/')
+      if (isMounted.current) {
+        router.push('/')
+      }
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Eroare la autentificare')
+      if (isMounted.current) {
+        setError(err.response?.data?.detail || 'Eroare la autentificare')
+      }
     } finally {
-      setIsLoading(false)
+      if (isMounted.current) {
+        setIsLoading(false)
+      }
     }
   }
 

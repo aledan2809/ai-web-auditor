@@ -15,8 +15,13 @@ export function Navigation() {
   }, [])
 
   const handleLogout = async () => {
-    await logout()
-    window.location.href = '/'
+    try {
+      await logout()
+      window.location.href = '/'
+    } catch (err) {
+      console.error('Logout failed:', err)
+      window.location.href = '/'
+    }
   }
 
   return (
@@ -24,7 +29,7 @@ export function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link href="/" className="min-h-[44px] inline-flex items-center text-xl font-bold text-primary-600">
+            <Link href="/" className="min-h-[44px] self-stretch inline-flex items-center text-xl font-bold text-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded">
               AI Web Auditor
             </Link>
           </div>
@@ -32,7 +37,7 @@ export function Navigation() {
           <div className="flex items-center space-x-4">
             <Link
               href="/"
-              className={`min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900 ${pathname === '/' ? 'text-primary-600' : ''}`}
+              className={`min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded ${pathname === '/' ? 'text-primary-600' : ''}`}
             >
               Audit Nou
             </Link>
@@ -41,14 +46,14 @@ export function Navigation() {
               <>
                 <Link
                   href="/history"
-                  className={`min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900 ${pathname === '/history' ? 'text-primary-600' : ''}`}
+                  className={`min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded ${pathname === '/history' ? 'text-primary-600' : ''}`}
                 >
                   Istoric
                 </Link>
 
                 <Link
                   href="/pricing"
-                  className={`min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900 ${pathname === '/pricing' ? 'text-primary-600' : ''}`}
+                  className={`min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded ${pathname === '/pricing' ? 'text-primary-600' : ''}`}
                 >
                   Preturi
                 </Link>
@@ -96,13 +101,13 @@ export function Navigation() {
                   <div className="flex items-center space-x-3 ml-4">
                     <Link
                       href="/login"
-                      className="min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900"
+                      className="min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded"
                     >
                       Autentificare
                     </Link>
                     <Link
                       href="/register"
-                      className="min-h-[44px] inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                      className="min-h-[44px] inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                     >
                       Inregistrare
                     </Link>
