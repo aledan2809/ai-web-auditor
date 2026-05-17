@@ -2,25 +2,26 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { User, LogOut, CreditCard, Settings, Menu } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 
 export function Navigation() {
   const pathname = usePathname()
+  const router = useRouter()
   const { user, isAuthenticated, isLoading, checkAuth, logout } = useAuth()
 
   useEffect(() => {
-    checkAuth()
+    checkAuth().catch(err => console.error('Auth check failed:', err))
   }, [])
 
   const handleLogout = async () => {
     try {
       await logout()
-      window.location.href = '/'
+      router.push('/')
     } catch (err) {
       console.error('Logout failed:', err)
-      window.location.href = '/'
+      router.push('/')
     }
   }
 
@@ -37,7 +38,7 @@ export function Navigation() {
           <div className="flex items-center space-x-4">
             <Link
               href="/"
-              className={`min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded ${pathname === '/' ? 'text-primary-600' : ''}`}
+              className={`min-h-[44px] min-w-[44px] inline-flex items-center px-2 py-2.5 text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded ${pathname === '/' ? 'text-primary-600' : ''}`}
             >
               Audit Nou
             </Link>
@@ -46,14 +47,14 @@ export function Navigation() {
               <>
                 <Link
                   href="/history"
-                  className={`min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded ${pathname === '/history' ? 'text-primary-600' : ''}`}
+                  className={`min-h-[44px] inline-flex items-center px-2 py-2.5 text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded ${pathname === '/history' ? 'text-primary-600' : ''}`}
                 >
                   Istoric
                 </Link>
 
                 <Link
                   href="/pricing"
-                  className={`min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded ${pathname === '/pricing' ? 'text-primary-600' : ''}`}
+                  className={`min-h-[44px] inline-flex items-center px-2 py-2.5 text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded ${pathname === '/pricing' ? 'text-primary-600' : ''}`}
                 >
                   Preturi
                 </Link>
@@ -64,10 +65,10 @@ export function Navigation() {
               <>
                 {isAuthenticated ? (
                   <div className="flex items-center space-x-3 ml-4 pl-4 border-l">
-                    {user?.role === 'admin' && (
+                    {user != null && user.role === 'admin' && (
                       <Link
                         href="/admin"
-                        className={`min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-gray-600 hover:text-gray-900 ${pathname.startsWith('/admin') ? 'text-primary-600' : ''}`}
+                        className={`min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded ${pathname.startsWith('/admin') ? 'text-primary-600' : ''}`}
                         aria-label="Admin panel"
                       >
                         <Settings className="w-5 h-5" />
@@ -90,7 +91,7 @@ export function Navigation() {
 
                     <button
                       onClick={handleLogout}
-                      className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full"
+                      className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                       title="Deconectare"
                       aria-label="Deconectare"
                     >
@@ -101,7 +102,7 @@ export function Navigation() {
                   <div className="flex items-center space-x-3 ml-4">
                     <Link
                       href="/login"
-                      className="min-h-[44px] inline-flex items-center text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded"
+                      className="min-h-[44px] min-w-[44px] inline-flex items-center px-2 py-2.5 text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded"
                     >
                       Autentificare
                     </Link>

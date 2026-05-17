@@ -280,6 +280,19 @@ export default function LeadCaptureFlow() {
               description="Clear recommendations to improve your website"
             />
           </div>
+
+          {/* CTA Section */}
+          <div className="bg-primary-50 border border-primary-100 rounded-xl p-8 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+              Trusted by thousands of businesses
+            </h2>
+            <p className="text-gray-600 mb-2">
+              Our AI engine checks 9 critical areas: Performance, SEO, Security, GDPR, Accessibility, Mobile UX, Trust, Competitor analysis, and more.
+            </p>
+            <p className="text-sm text-gray-500">
+              Free audit · No credit card required · Results in 30 seconds
+            </p>
+          </div>
         </div>
       )}
 

@@ -24,12 +24,28 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setError('Adresa de email nu este validă')
+      return
+    }
+    if (password.length < 6) {
+      setError('Parola trebuie să aibă cel puțin 6 caractere')
+      return
+    }
+
     setIsLoading(true)
 
     try {
       await login(email, password)
       if (isMounted.current) {
-        router.push('/')
+        try {
+          router.push('/')
+        } catch (navErr) {
+          console.error('Navigation failed:', navErr)
+          window.location.href = '/'
+        }
       }
     } catch (err: any) {
       if (isMounted.current) {

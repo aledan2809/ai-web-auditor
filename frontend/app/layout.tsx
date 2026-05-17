@@ -27,6 +27,9 @@ export default function RootLayout({
           <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {children}
           </main>
+          <footer className="border-t bg-white py-6 mt-8 text-center text-sm text-gray-500">
+            <p>© {new Date().getFullYear()} AI Web Auditor · audit inteligent pentru website-ul tău</p>
+          </footer>
         </Providers>
       </body>
     </html>
