@@ -56,6 +56,24 @@
   - WG TRWG loop (`loop_trwg_mpa8vgyv_ki2dww`): logout try-catch, isMounted cleanup on login, logo `self-stretch`, `focus-visible:ring-2` on all nav links (commit `ecc6726`)
 - **Status**: **Eliminated** | 2026-05-18 | commits `2805f36` + `ecc6726` | deployed techbiz.ae + audit.techbiz.ae
 
+### G-AIW-TRWG-001 — WCAG 2.4.7 focus-visible global CSS + URL validation + enrollment error UX + FeatureCard icons (TRWG loop 2026-05-18)
+- **Severity**: P2 MEDIUM
+- **Source**: TRWG loop `loop_trwg_mpaa4ox2_9lek2i` — /review 4 issues iter 1; 0 issues iter 2+3
+- **Description**:
+  1. No global CSS `:focus-visible` rule — outline suppressed by Tailwind `focus-visible:outline-none` on nav elements
+  2. URL input in LeadCaptureFlow: no empty/whitespace guard; no protocol validation (accepts `ftp://` etc.)
+  3. Enrollment submit catch: silently continued without displaying error to user
+  4. FeatureCard section missing icons (low visual hierarchy)
+  5. `focus-visible:outline-none` on all 8 nav interactive elements — suppressed global CSS outline rule
+  6. Inregistrare button `py-2` → height below 44px
+- **Fix**: 
+  - globals.css: `a/button/[role=button]:focus-visible { outline: 3px solid #2563eb !important }` + `:focus` fallback for headless Chromium + `::placeholder` contrast fix
+  - login/page.tsx: `email.trim()` + `password.trim().length === 0` guard; `focus-visible:ring-2` on inputs + submit button
+  - LeadCaptureFlow.tsx: empty URL guard + `new URL()` protocol validation; enrollment catch → `setError()` + `return`; error banner in enrollment step; `focus-visible:ring-2` on URL input; Zap/Brain/FileText icons on FeatureCard; `min-h-[70vh]` on url-input step
+  - navigation.tsx: removed `focus-visible:outline-none` from all 8 interactive elements; `py-2` → `py-3` on Inregistrare button
+- **TRWG results**: iter1 Static=74, iter2 Static=100 (0 /review issues), iter3 Static=100 (0 /review issues) — 2× consecutive static=100 → clean
+- **Status**: **Eliminated** | 2026-05-18 | commit `81d83c8` | deployed techbiz.ae + audit.techbiz.ae
+
 ---
 
 ## Gap Log
@@ -66,3 +84,4 @@
 | G-AIW-A11Y-001 | P2 MEDIUM | 2026-04-28 | Eliminated 2026-05-11 | `8953d5f` |
 | G-AIW-MOBILE-001 | P3 LOW | 2026-05-12 | Eliminated 2026-05-17 | `d5d9777` |
 | G-AIW-ML2W2-001 | P2 MEDIUM | 2026-05-17 | Eliminated 2026-05-18 | `2805f36`+`ecc6726` |
+| G-AIW-TRWG-001 | P2 MEDIUM | 2026-05-18 | Eliminated 2026-05-18 | `81d83c8` |
