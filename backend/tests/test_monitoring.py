@@ -147,3 +147,26 @@ def test_run_monitoring_once_no_notify_below_threshold(tmp_path):
     ))
     assert res["audited"] == 1 and res["notified"] == 0
     assert sent == []
+
+
+def test_run_monitoring_once_empty_source_is_noop(tmp_path):
+    """Safety guarantee for activating the loop: absent/empty monitors → no-op."""
+    missing = tmp_path / "does-not-exist.json"
+    called = {"audit": 0, "email": 0}
+
+    async def fake_audit(url):
+        called["audit"] += 1
+        return {"overall": 50, "scores": {}}
+
+    res = asyncio.run(run_monitoring_once(
+        monitors_path=str(missing),
+        run_audit=fake_audit,
+        send_email=lambda *a: called.__setitem__("email", called["email"] + 1) or True,
+    ))
+    assert res == {"checked": 0, "audited": 0, "notified": 0}
+    assert called == {"audit": 0, "email": 0}
+
+
+def test_default_run_audit_and_loop_are_importable():
+    from services.monitoring import default_run_audit, run_monitoring_loop
+    assert callable(default_run_audit) and callable(run_monitoring_loop)

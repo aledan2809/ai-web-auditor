@@ -19,11 +19,15 @@ The loop updates last_* in place after each re-audit.
 
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from typing import Callable, Optional
+
+logger = logging.getLogger("monitoring")
 
 # Cadence in days per frequency keyword.
 FREQUENCY_DAYS = {"daily": 1, "weekly": 7, "monthly": 30}
@@ -162,6 +166,62 @@ def save_monitors(monitors: list[dict], path: str = DEFAULT_MONITORS_PATH) -> No
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         json.dump(monitors, f, indent=2)
+
+
+async def default_run_audit(url: str) -> Optional[dict]:
+    """
+    Real run-audit seam: runs the auditors CONCURRENTLY (reuses R5a's
+    gather_auditor_results) + computes the official overall score, WITHOUT
+    creating a full DB audit record. Returns {overall, scores}. Best-effort —
+    returns None on failure so the monitor loop just skips this tick.
+    """
+    try:
+        from services.audit_runner import gather_auditor_results
+        from services.scoring import from_legacy_scores, compute_overall_score
+
+        ar = await gather_auditor_results(url, ["full"], mobile_test=False, lang="ro")
+
+        def sc(name):
+            r = ar.get(name)
+            return getattr(r, "score", None) if r is not None else None
+
+        scores = {k: sc(k) for k in SCORE_KEYS}
+        comp = from_legacy_scores(
+            performance_score=scores.get("performance"),
+            seo_score=scores.get("seo"),
+            security_score=scores.get("security"),
+            gdpr_score=scores.get("gdpr"),
+            accessibility_score=scores.get("accessibility"),
+            mobile_ux_score=scores.get("mobile_ux"),
+            trust_score=scores.get("trust"),
+            competitor_score=scores.get("competitor"),
+        )
+        overall = compute_overall_score(comp).overall_score
+        return {"overall": int(round(overall)), "scores": {k: v for k, v in scores.items() if v is not None}}
+    except Exception as e:
+        logger.warning(f"monitoring run_audit failed for {url}: {e}")
+        return None
+
+
+async def run_monitoring_loop(poll_interval_seconds: int = 3600):
+    """
+    Background loop: every `poll_interval_seconds`, run one monitoring tick with
+    the real audit + email seams. No-op while monitors.json is empty/absent, so
+    enabling this is safe — it does nothing until a monitor is registered.
+    """
+    from services.email_service import _send
+
+    logger.info("[MONITORING] Recurring re-audit loop started")
+    while True:
+        try:
+            res = await run_monitoring_once(run_audit=default_run_audit, send_email=_send)
+            if res["audited"]:
+                logger.info(f"[MONITORING] tick: {res}")
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            logger.warning(f"[MONITORING] tick error: {e}")
+        await asyncio.sleep(poll_interval_seconds)
 
 
 async def run_monitoring_once(

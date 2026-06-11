@@ -83,10 +83,16 @@ async def lifespan(app: FastAPI):
     from services.email_scheduler import run_email_scheduler_loop
     scheduler_task = asyncio.create_task(run_email_scheduler_loop())
 
+    # Start recurring-monitoring loop (R3+S1). No-op while data/monitors.json is
+    # empty, so this is safe to always run; it only re-audits registered sites.
+    from services.monitoring import run_monitoring_loop
+    monitoring_task = asyncio.create_task(run_monitoring_loop())
+
     yield
 
     # Shutdown
     scheduler_task.cancel()
+    monitoring_task.cancel()
     print("Shutting down...")
     await close_db()
 
