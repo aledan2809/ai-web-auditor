@@ -54,6 +54,17 @@ class PerformanceAuditor:
         # Generate issues based on metrics
         issues = self._generate_issues(metrics, url, lang)
 
+        # CrUX field data (real-user Core Web Vitals) — additive issues only.
+        # No-op unless CRUX_API_KEY is set; never fails the audit. The score
+        # stays synthetic so the scoring model (golden tests) is untouched.
+        try:
+            from services.crux import fetch_crux_metrics, crux_issues
+            field = await fetch_crux_metrics(url, form_factor="PHONE" if mobile else "DESKTOP")
+            if field:
+                issues.extend(crux_issues(field, url, lang))
+        except Exception as e:
+            print(f"CrUX field data skipped: {e}")
+
         return PerformanceResult(
             score=score,
             metrics=metrics,

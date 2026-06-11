@@ -5,7 +5,7 @@ Main application entry point
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from typing import Optional, List
 from datetime import datetime
 from contextlib import asynccontextmanager
@@ -337,6 +337,34 @@ async def get_audit(
         issues=issues,
         desktop_screenshot=audit.desktop_screenshot,
         mobile_screenshot=audit.mobile_screenshot
+    )
+
+
+@app.get("/api/audit/{audit_id}/badge.svg")
+async def audit_badge(
+    audit_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Embeddable 'Audited' badge with the overall score (shields-style SVG).
+    Site owners embed it via <img src=".../api/audit/<id>/badge.svg"> — every
+    render is free marketing. Only completed audits get a badge.
+    """
+    from services.badge import build_badge_svg
+    audit_repo = AuditRepository(db)
+    audit = await audit_repo.get_by_id(audit_id)
+    if not audit:
+        raise HTTPException(status_code=404, detail="Audit negasit")
+    if audit.status != "completed":
+        raise HTTPException(status_code=400, detail="Auditul nu este finalizat")
+    svg = build_badge_svg(int(audit.overall_score or 0))
+    return Response(
+        content=svg,
+        media_type="image/svg+xml",
+        headers={
+            "Cache-Control": "public, max-age=86400",
+            "Access-Control-Allow-Origin": "*",
+        },
     )
 
 
