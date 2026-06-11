@@ -586,10 +586,16 @@ async def run_audit(
         issues = []
         scores = {}
 
+        # Run the in-scope auditors CONCURRENTLY up front (roadmap R5). Total
+        # audit time ≈ slowest auditor instead of the sum. Error policy is
+        # preserved exactly: core failures propagate (hard-fail), extras
+        # soft-fail to None. Each block below reads its pre-computed result.
+        from services.audit_runner import gather_auditor_results
+        ar = await gather_auditor_results(url, audit_types, mobile_test, lang)
+
         # Run selected audits
         if "full" in audit_types or "performance" in audit_types:
-            perf_auditor = PerformanceAuditor()
-            perf_result = await perf_auditor.audit(url, mobile_test, lang)
+            perf_result = ar["performance"]
             scores["performance"] = perf_result.score
 
             # Save metrics
@@ -617,8 +623,7 @@ async def run_audit(
                 })
 
         if "full" in audit_types or "seo" in audit_types:
-            seo_auditor = SEOAuditor()
-            seo_result = await seo_auditor.audit(url, lang)
+            seo_result = ar["seo"]
             scores["seo"] = seo_result.score
             scores["tseo"] = seo_result.tseo_score
             scores["opseo"] = seo_result.opseo_score
@@ -652,8 +657,7 @@ async def run_audit(
                 })
 
         if "full" in audit_types or "security" in audit_types:
-            sec_auditor = SecurityAuditor()
-            sec_result = await sec_auditor.audit(url, lang)
+            sec_result = ar["security"]
             scores["security"] = sec_result.score
 
             await audit_repo.add_security_metrics(audit_id, {
@@ -684,8 +688,7 @@ async def run_audit(
                 })
 
         if "full" in audit_types or "gdpr" in audit_types:
-            gdpr_auditor = GDPRAuditor()
-            gdpr_result = await gdpr_auditor.audit(url, lang)
+            gdpr_result = ar["gdpr"]
             scores["gdpr"] = gdpr_result.score
 
             await audit_repo.add_gdpr_metrics(audit_id, {
@@ -713,8 +716,7 @@ async def run_audit(
                 })
 
         if "full" in audit_types or "accessibility" in audit_types:
-            a11y_auditor = AccessibilityAuditor()
-            a11y_result = await a11y_auditor.audit(url, lang)
+            a11y_result = ar["accessibility"]
             scores["accessibility"] = a11y_result.score
 
             await audit_repo.add_accessibility_metrics(audit_id, {
@@ -748,58 +750,58 @@ async def run_audit(
 
             # Mobile UX
             try:
-                mobux_auditor = MobileUXAuditor()
-                mobux_result = await mobux_auditor.audit(url, lang)
-                scores["mobile_ux"] = mobux_result.score
-                for issue in mobux_result.issues:
-                    issues.append({
-                        "category": "ui_ux",
-                        "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
-                        "title": issue.title,
-                        "description": issue.description,
-                        "recommendation": issue.recommendation,
-                        "affected_element": getattr(issue, 'affected_element', None),
-                        "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
-                        "complexity": getattr(issue, 'complexity', 'medium')
-                    })
+                mobux_result = ar.get("mobile_ux")
+                if mobux_result is not None:
+                    scores["mobile_ux"] = mobux_result.score
+                    for issue in mobux_result.issues:
+                        issues.append({
+                            "category": "ui_ux",
+                            "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
+                            "title": issue.title,
+                            "description": issue.description,
+                            "recommendation": issue.recommendation,
+                            "affected_element": getattr(issue, 'affected_element', None),
+                            "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
+                            "complexity": getattr(issue, 'complexity', 'medium')
+                        })
             except Exception as e:
                 logger.warning(f"Mobile UX audit error: {e}")
 
             # Trust & Conversions
             try:
-                trust_auditor = TrustAuditor()
-                trust_result = await trust_auditor.audit(url, lang)
-                scores["trust"] = trust_result.score
-                for issue in trust_result.issues:
-                    issues.append({
-                        "category": "ui_ux",
-                        "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
-                        "title": issue.title,
-                        "description": issue.description,
-                        "recommendation": issue.recommendation,
-                        "affected_element": getattr(issue, 'affected_element', None),
-                        "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
-                        "complexity": getattr(issue, 'complexity', 'medium')
-                    })
+                trust_result = ar.get("trust")
+                if trust_result is not None:
+                    scores["trust"] = trust_result.score
+                    for issue in trust_result.issues:
+                        issues.append({
+                            "category": "ui_ux",
+                            "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
+                            "title": issue.title,
+                            "description": issue.description,
+                            "recommendation": issue.recommendation,
+                            "affected_element": getattr(issue, 'affected_element', None),
+                            "estimated_hours": getattr(issue, 'estimated_hours', 1.0),
+                            "complexity": getattr(issue, 'complexity', 'medium')
+                        })
             except Exception as e:
                 logger.warning(f"Trust audit error: {e}")
 
             # Competitor Gap (no competitor URL in v1 basic flow)
             try:
-                comp_auditor = CompetitorAuditor()
-                comp_result = await comp_auditor.audit(url, competitor_url=None, lang=lang)
-                scores["competitor"] = comp_result.score
-                for issue in comp_result.issues:
-                    issues.append({
-                        "category": "full",
-                        "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
-                        "title": issue.title,
-                        "description": issue.description,
-                        "recommendation": issue.recommendation,
-                        "affected_element": getattr(issue, 'affected_element', None),
-                        "estimated_hours": getattr(issue, 'estimated_hours', 0),
-                        "complexity": getattr(issue, 'complexity', 'simple')
-                    })
+                comp_result = ar.get("competitor")
+                if comp_result is not None:
+                    scores["competitor"] = comp_result.score
+                    for issue in comp_result.issues:
+                        issues.append({
+                            "category": "full",
+                            "severity": issue.severity.value if hasattr(issue.severity, 'value') else issue.severity,
+                            "title": issue.title,
+                            "description": issue.description,
+                            "recommendation": issue.recommendation,
+                            "affected_element": getattr(issue, 'affected_element', None),
+                            "estimated_hours": getattr(issue, 'estimated_hours', 0),
+                            "complexity": getattr(issue, 'complexity', 'simple')
+                        })
             except Exception as e:
                 logger.warning(f"Competitor audit error: {e}")
 
