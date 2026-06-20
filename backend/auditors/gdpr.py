@@ -13,6 +13,7 @@ from models.schemas import (
     GDPRMetrics, AuditIssue, AuditType, Severity
 )
 from translations import t
+from services.ssrf_guard import SSRF_EVENT_HOOKS
 
 
 @dataclass
@@ -85,7 +86,7 @@ class GDPRAuditor:
 
     async def audit(self, url: str, lang: str = "ro") -> GDPRResult:
         """Run GDPR compliance audit"""
-        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True, event_hooks=SSRF_EVENT_HOOKS) as client:
             response = await client.get(url)
             content = response.text
             soup = BeautifulSoup(content, 'lxml')

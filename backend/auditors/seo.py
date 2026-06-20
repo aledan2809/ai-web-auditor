@@ -14,6 +14,7 @@ from models.schemas import (
     SEOMetrics, AuditIssue, AuditType, Severity
 )
 from translations import t
+from services.ssrf_guard import SSRF_EVENT_HOOKS
 
 
 @dataclass
@@ -34,7 +35,7 @@ class SEOAuditor:
 
     async def audit(self, url: str, lang: str = "ro") -> SEOResult:
         """Run SEO audit on URL"""
-        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True, event_hooks=SSRF_EVENT_HOOKS) as client:
             # Fetch main page
             response = await client.get(url)
             soup = BeautifulSoup(response.content, 'lxml')

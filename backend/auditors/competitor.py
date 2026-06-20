@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 import re
 
 from models.schemas import AuditIssue, AuditType, Severity
+from services.ssrf_guard import is_public_url, SSRF_EVENT_HOOKS
 
 
 @dataclass
@@ -155,8 +156,13 @@ class CompetitorAuditor:
 
     async def _fetch_metrics(self, url: str) -> CompetitorMetrics:
         metrics = CompetitorMetrics(url=url)
+        # SSRF guard: never fetch competitor URLs that resolve to
+        # private/loopback/link-local/metadata addresses.
+        if not is_public_url(url):
+            metrics.url = ""  # signal failure
+            return metrics
         try:
-            async with httpx.AsyncClient(timeout=12.0, follow_redirects=True) as client:
+            async with httpx.AsyncClient(timeout=12.0, follow_redirects=True, event_hooks=SSRF_EVENT_HOOKS) as client:
                 resp = await client.get(url)
                 metrics.load_time_ms = resp.elapsed.total_seconds() * 1000
                 soup = BeautifulSoup(resp.content, "lxml")

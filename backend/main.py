@@ -52,6 +52,9 @@ from ai.agents.router import router as ai_agents_router
 # AVE Landing endpoints (teaser/unlock/full)
 from services.ave_router import router as ave_router
 
+# SSRF guard for audit targets
+from services.ssrf_guard import is_public_url
+
 # Schemas
 from models.schemas import (
     AuditRequest, AuditResponse, AuditResult, AuditStatus,
@@ -161,6 +164,14 @@ async def start_audit(
     current_user: Optional[User] = Depends(get_current_user_optional)
 ):
     """Start a new website audit"""
+    # SSRF guard: reject targets that resolve to private/loopback/link-local
+    # or cloud-metadata addresses before any fetch happens.
+    if not is_public_url(str(request.url)):
+        raise HTTPException(
+            status_code=400,
+            detail="Target URL is not allowed (private, loopback, or internal address)."
+        )
+
     audit_repo = AuditRepository(db)
 
     # Check credits if user is authenticated

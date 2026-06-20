@@ -22,6 +22,7 @@ from services.scoring import (
     overall_result_to_dict, score_status,
 )
 from auth.utils import generate_guru_token, verify_guru_token
+from services.ssrf_guard import is_public_url
 
 router = APIRouter(prefix="/api/ave", tags=["ave-landing"])
 
@@ -69,6 +70,14 @@ def normalize_url(raw: str) -> str:
     # Strip trailing slash from bare domains
     if v.endswith("/") and parsed.path in ("", "/"):
         v = v.rstrip("/")
+
+    # SSRF guard: reject targets that resolve to private/loopback/link-local
+    # or cloud-metadata addresses before any fetch happens.
+    if not is_public_url(v):
+        raise HTTPException(
+            status_code=400,
+            detail="Target URL is not allowed (private, loopback, or internal address).",
+        )
 
     return v
 

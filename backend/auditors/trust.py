@@ -12,6 +12,7 @@ from urllib.parse import urljoin
 import re
 
 from models.schemas import AuditIssue, AuditType, Severity
+from services.ssrf_guard import SSRF_EVENT_HOOKS
 
 
 @dataclass
@@ -50,7 +51,7 @@ class TrustAuditor:
         issues: List[AuditIssue] = []
 
         try:
-            async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+            async with httpx.AsyncClient(timeout=15.0, follow_redirects=True, event_hooks=SSRF_EVENT_HOOKS) as client:
                 resp = await client.get(url)
                 soup = BeautifulSoup(resp.content, "lxml")
                 body_text = soup.body.get_text(" ", strip=True) if soup.body else ""

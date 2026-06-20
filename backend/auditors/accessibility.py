@@ -13,6 +13,7 @@ from models.schemas import (
     AccessibilityMetrics, AuditIssue, AuditType, Severity
 )
 from translations import t
+from services.ssrf_guard import SSRF_EVENT_HOOKS
 
 
 @dataclass
@@ -30,7 +31,7 @@ class AccessibilityAuditor:
 
     async def audit(self, url: str, lang: str = "ro") -> AccessibilityResult:
         """Run accessibility audit"""
-        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True, event_hooks=SSRF_EVENT_HOOKS) as client:
             response = await client.get(url)
             soup = BeautifulSoup(response.content, 'lxml')
 

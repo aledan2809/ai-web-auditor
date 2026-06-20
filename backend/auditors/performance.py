@@ -14,6 +14,7 @@ from models.schemas import (
     PerformanceMetrics, AuditIssue, AuditType, Severity
 )
 from translations import t
+from services.ssrf_guard import SSRF_EVENT_HOOKS
 
 
 @dataclass
@@ -151,7 +152,7 @@ class PerformanceAuditor:
 
     async def _measure_with_http(self, url: str) -> PerformanceMetrics:
         """Fallback HTTP-based measurement"""
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=30.0, event_hooks=SSRF_EVENT_HOOKS) as client:
             start = datetime.now()
             response = await client.get(url, follow_redirects=True)
             end = datetime.now()

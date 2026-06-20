@@ -281,9 +281,10 @@ async def complete_social_share(
     lead_id: str,
     platform: str,
     background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(require_admin)
 ):
-    """Mark social share as completed (for free tier)"""
+    """Mark social share as completed (for free tier). Admin-only — mutates lead conversion state."""
     result = await db.execute(
         select(Lead).where(Lead.id == lead_id)
     )
@@ -323,9 +324,10 @@ async def update_payment_status(
     status: str,
     stripe_session_id: Optional[str] = None,
     invoice_number: Optional[str] = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    admin = Depends(require_admin)
 ):
-    """Update lead payment status (called by Stripe webhook)"""
+    """Update lead payment status (admin-only). The legit payment path is the signed Stripe webhook."""
     result = await db.execute(
         select(Lead).where(Lead.id == lead_id)
     )

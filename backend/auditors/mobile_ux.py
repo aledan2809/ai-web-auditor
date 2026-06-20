@@ -10,6 +10,7 @@ import httpx
 from bs4 import BeautifulSoup
 
 from models.schemas import AuditIssue, AuditType, Severity
+from services.ssrf_guard import SSRF_EVENT_HOOKS
 
 
 @dataclass
@@ -45,6 +46,7 @@ class MobileUXAuditor:
                 timeout=15.0,
                 follow_redirects=True,
                 headers={"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)"},
+                event_hooks=SSRF_EVENT_HOOKS,
             ) as client:
                 resp = await client.get(url)
                 soup = BeautifulSoup(resp.content, "lxml")
