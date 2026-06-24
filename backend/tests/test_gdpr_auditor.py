@@ -55,19 +55,33 @@ class TestScoreModel:
     def test_all_good_is_100(self):
         assert aud._calculate_score(metrics()) == 100
 
-    def test_no_banner_without_trackers_costs_10(self):
-        assert aud._calculate_score(metrics(cookie_banner_present=False)) == 90
+    def test_no_banner_without_trackers_is_100(self):
+        # Cookieless site needs no consent banner → no penalty (false-positive fix).
+        assert aud._calculate_score(metrics(cookie_banner_present=False)) == 100
+
+    def test_cookieless_site_no_consent_ui_is_100(self):
+        # No trackers + no banner + no categories + no opt-out → still 100:
+        # consent UI is irrelevant when nothing non-essential is loaded.
+        m = metrics(
+            cookie_banner_present=False,
+            cookie_categories_explained=False,
+            opt_out_option=False,
+            third_party_trackers=[],
+        )
+        assert aud._calculate_score(m) == 100
 
     def test_no_banner_with_trackers_costs_30_plus_15(self):
         m = metrics(cookie_banner_present=False, third_party_trackers=["ga"])
         assert aud._calculate_score(m) == 55
 
     def test_no_privacy_policy_costs_25(self):
+        # Privacy-policy penalty is unconditional (personal data via forms/accounts).
         assert aud._calculate_score(metrics(privacy_policy_link=False)) == 75
 
     def test_consent_ui_quality_penalties(self):
-        assert aud._calculate_score(metrics(cookie_categories_explained=False)) == 90
-        assert aud._calculate_score(metrics(opt_out_option=False)) == 90
+        # Quality penalties apply only when trackers are present (banner shown).
+        assert aud._calculate_score(metrics(third_party_trackers=["ga"], cookie_categories_explained=False)) == 90
+        assert aud._calculate_score(metrics(third_party_trackers=["ga"], opt_out_option=False)) == 90
 
     def test_floor_at_zero(self):
         worst = metrics(

@@ -252,29 +252,38 @@ class GDPRAuditor:
         return False
 
     def _calculate_score(self, metrics: GDPRMetrics) -> int:
-        """Calculate GDPR compliance score"""
+        """Calculate GDPR compliance score.
+
+        Consent-mechanism penalties (banner, category breakdown, opt-out,
+        tracker-without-consent) apply ONLY when the site actually loads
+        third-party trackers — i.e. when consent is legally required. A
+        cookieless / tracker-free site needs no consent banner, so penalising its
+        absence is a false positive: it previously mis-scored compliant static
+        sites (our own cookieless landing pages reported GDPR ~35 despite setting
+        zero cookies / loading zero trackers). The privacy-policy penalty stays
+        unconditional — a site may process personal data via forms/accounts
+        regardless of cookies.
+        """
         score = 100
 
-        # Cookie banner (-30)
-        if not metrics.cookie_banner_present:
-            if metrics.third_party_trackers:
+        # Consent UI is only legally required when trackers / non-essential
+        # cookies load. No trackers → nothing to consent to → no penalty.
+        if metrics.third_party_trackers:
+            # Cookie banner (-30)
+            if not metrics.cookie_banner_present:
                 score -= 30
-            else:
+            # Consent UI quality (-20)
+            if not metrics.cookie_categories_explained:
                 score -= 10
+            if not metrics.opt_out_option:
+                score -= 10
+            # Trackers loading without consent (-15)
+            if not metrics.cookie_banner_present:
+                score -= 15
 
-        # Privacy policy (-25)
+        # Privacy policy (-25) — expected whenever personal data may be processed.
         if not metrics.privacy_policy_link:
             score -= 25
-
-        # Consent UI quality (-20)
-        if not metrics.cookie_categories_explained:
-            score -= 10
-        if not metrics.opt_out_option:
-            score -= 10
-
-        # Trackers without consent (-15)
-        if metrics.third_party_trackers and not metrics.cookie_banner_present:
-            score -= 15
 
         return max(0, score)
 
