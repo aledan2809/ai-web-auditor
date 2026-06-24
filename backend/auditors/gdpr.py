@@ -35,7 +35,11 @@ class GDPRAuditor:
                 r'gtag\(',
                 r'ga\(',
                 r'UA-\d+-\d+',
-                r'G-[A-Z0-9]+'
+                # GA4 measurement ID — strict format (G- + exactly 10 alnum) AND
+                # case-sensitive even under the global re.I, via the (?-i:...) scoped
+                # flag. The old r'G-[A-Z0-9]+' matched CSS fragments like
+                # "g-transparent" (from class="bg-transparent") → false GA=True.
+                r'(?-i:G-[A-Z0-9]{10})\b'
             ],
             'facebook': [
                 r'facebook\.net',

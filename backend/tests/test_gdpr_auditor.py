@@ -50,6 +50,17 @@ class TestTrackers:
     def test_no_trackers(self):
         assert aud._has_tracker("<p>hello</p>", aud.tracking_patterns["google_analytics"]) is False
 
+    def test_ga4_bare_id_detected(self):
+        # GA4 measurement ID present without gtag.js src (real config) still detected
+        content = '<script>window.dataLayer=[];gtagId="G-ABC1234567";</script>'
+        assert aud._has_tracker(content, aud.tracking_patterns["google_analytics"]) is True
+
+    def test_css_class_not_false_positive(self):
+        # Regression: r'G-[A-Z0-9]+' under re.I matched "g-transparent" (from
+        # class="bg-transparent") → false GA=True on tracker-free pages.
+        content = '<input class="flex-1 bg-transparent text-white" />'
+        assert aud._has_tracker(content, aud.tracking_patterns["google_analytics"]) is False
+
 
 class TestScoreModel:
     def test_all_good_is_100(self):
