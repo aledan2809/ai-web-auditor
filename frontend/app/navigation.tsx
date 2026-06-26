@@ -109,15 +109,17 @@ export function Navigation() {
                   <div className="flex items-center space-x-3 ml-4">
                     <Link
                       href="/login"
-                      className="self-stretch min-w-[44px] inline-flex items-center px-3 text-gray-600 hover:text-gray-900 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded"
+                      lang="ro"
+                      className="min-h-[44px] min-w-[44px] inline-flex items-center px-3 text-gray-600 hover:text-gray-900 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded"
                     >
                       Autentificare
                     </Link>
                     <Link
                       href="/register"
-                      className="h-11 inline-flex items-center px-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+                      lang="ro"
+                      className="min-h-[44px] inline-flex items-center px-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
                     >
-                      Inregistrare
+                      Înregistrare
                     </Link>
                   </div>
                 )}

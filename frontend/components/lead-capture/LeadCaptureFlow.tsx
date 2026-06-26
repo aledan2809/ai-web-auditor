@@ -235,12 +235,12 @@ export default function LeadCaptureFlow() {
 
       {/* URL Input Step */}
       {step === 'url-input' && (
-        <div className="space-y-8">
+        <div className="space-y-8" lang="en">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
               Free Website Audit
             </h1>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-700">
               Get instant scores for Performance, SEO, Security, GDPR & Accessibility
             </p>
           </div>
@@ -309,7 +309,7 @@ export default function LeadCaptureFlow() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">
               Trusted by thousands of businesses
             </h2>
-            <p className="text-gray-600 mb-2">
+            <p className="text-gray-700 mb-2">
               Our AI engine checks 9 critical areas: Performance, SEO, Security, GDPR, Accessibility, Mobile UX, Trust, Competitor analysis, and more.
             </p>
             <p className="text-sm text-gray-700">
@@ -482,7 +482,7 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode; titl
     <div role="presentation" className="bg-white p-6 rounded-lg shadow text-center">
       <div className="flex justify-center mb-3">{icon}</div>
       <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-sm text-gray-600">{description}</p>
+      <p className="text-sm text-gray-700">{description}</p>
     </div>
   )
 }
